@@ -1,0 +1,10 @@
+{
+  "product_id": "REPLACE-PRODUCT-ID",
+  "version": "REPLACE-VERSION",
+  "evidence_mode": "MODEL_ASSISTED",
+  "product_scope": "PRODUCT_ONLY",
+  "product_evidence": [],
+  "render_templates": [],
+  "known_issues": [],
+  "error_supplements": []
+}

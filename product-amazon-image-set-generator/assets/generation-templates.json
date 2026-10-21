@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "templates": [
+    {
+      "template_id": "main_product",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": false,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output"
+      ],
+      "prompt_rules": [
+        "Show the complete sellable object in the evidence-backed view on pure white. No copy, people, arrows, floating parts, or unpurchased props. Keep all product edges inside the frame."
+      ]
+    },
+    {
+      "template_id": "product_overview",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": false,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output"
+      ],
+      "prompt_rules": [
+        "Make the actual product and assigned proposition clear using the current creative brief. Place exact copy only when assigned, integrated into that composition; related evidence-backed detail regions are allowed. Do not invent accessories."
+      ]
+    },
+    {
+      "template_id": "material_macro",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": false,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output"
+      ],
+      "prompt_rules": [
+        "Show the actual weave/surface orientation at a physically plausible scale. Keep enough product context to identify the surface. No invented layers, fibres, or scientific claims."
+      ]
+    },
+    {
+      "template_id": "hardware_static",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": true,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output",
+        "hardware_state"
+      ],
+      "prompt_rules": [
+        "Show one evidence-backed assembled or closed connector/clasp state. Preserve component count, interface geometry, strap routing, attachment side and surface orientation. No exploded, lifted, hinged or floating component; no motion arrows."
+      ]
+    },
+    {
+      "template_id": "mechanism_steps",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": true,
+      "requires_mechanism": true,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output",
+        "hardware_state",
+        "mechanism_motion"
+      ],
+      "prompt_rules": [
+        "Show only the evidenced start/end states and verified operating direction. Match contact surfaces and routing in every depicted state. Label arrows only with approved operating copy; never infer a release motion from a static photo."
+      ]
+    },
+    {
+      "template_id": "lifestyle_simple",
+      "revision": 1,
+      "requires_human": true,
+      "requires_structure": false,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output",
+        "human_anatomy",
+        "human_product_contact"
+      ],
+      "prompt_rules": [
+        "Depict the assigned recognizable person, meaningful activity and environment with the product readable at natural scale. Choose a pose appropriate to that task; specify visible-limb ownership, contact and occlusion. Preserve plausible anatomy, product curvature and contact shadows without clipping or fused parts."
+      ]
+    },
+    {
+      "template_id": "size_fit",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": false,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output"
+      ],
+      "prompt_rules": [
+        "Present only verified dimensions and compatible variants. Keep measurement lines separate from product contours; avoid illustrating an unsupported device or installation."
+      ]
+    },
+    {
+      "template_id": "range_story",
+      "revision": 1,
+      "requires_human": false,
+      "requires_structure": false,
+      "requires_mechanism": false,
+      "required_checks": [
+        "product_identity",
+        "structure_topology",
+        "human_presence",
+        "copy_claims",
+        "layout_output"
+      ],
+      "prompt_rules": [
+        "For a selection task, show only registered choices with comparable views and accurate labels; a single product cannot substitute for a range. A single-product closing composition is allowed only when the actual task explicitly assigns it. Preserve identity and texture per SKU; invent no colours or accessories."
+      ]
+    }
+  ]
+}

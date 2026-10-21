@@ -1,0 +1,68 @@
+classDiagram
+    direction TB
+
+    class ProductPackage["产品包"] {
+        +product_id
+        +evidence
+        +product_facts
+    }
+    class Evidence["原始证据"] {
+        +evidence_id
+        +path
+        +sha256
+    }
+    class SetPlan["套图计划"] {
+        +set_id
+        +selected_counts
+        +visual_system
+    }
+    class PageGroup["内容组"] {
+        <<valueObject>>
+        +page_module_id
+        +image_ids
+    }
+    class ImageTask["单图任务"] {
+        +module_id
+        +image_intent
+        +creative_brief
+        +copy
+    }
+    class InputSnapshot["输入快照"] {
+        <<valueObject>>
+        +reference_snapshot
+        +identity_lockset
+        +design_brief
+    }
+    class GenerationContract["生成合约"] {
+        +plan_binding
+        +attempt
+        +output_path
+    }
+    class Candidate["候选图片"] {
+        +candidate_id
+        +path
+        +status
+    }
+    class VisualQA["视觉审核记录"] {
+        +reviewer
+        +checks
+        +unresolved_items
+    }
+
+    ProductPackage "1" *-- "0..*" Evidence
+    ProductPackage "1" *-- "0..*" SetPlan
+    SetPlan "1" *-- "1..*" ImageTask
+    SetPlan "1" *-- "0..*" PageGroup
+    SetPlan "1" *-- "1" InputSnapshot
+    PageGroup "0..1" --> "1..*" ImageTask : image_ids
+    ImageTask ..> Evidence : 选定引用
+    ImageTask "1" --> "0..*" GenerationContract : 生成尝试
+    GenerationContract ..> SetPlan : SHA256绑定
+    GenerationContract "1" --> "0..1" Candidate : 输出
+    Candidate "1" --> "0..1" VisualQA : 审核
+
+    note for PageGroup "分组是计划内的值对象；一组可含多张图"
+    note for ProductPackage "首次建包拆出特征、卖点及依据；更新时只修订受影响事实"
+    note for ImageTask "选定事实进入视觉任务；仅文字卖点进入copy；表达可混合，A+仅1464×600"
+    note for SetPlan "计数与就绪程度由记录计算；SET_STATE保存执行进度与尝试指针"
+    note for GenerationContract "输入快照经已锁定的计划解析；人工接受记录在候选及决策日志中"

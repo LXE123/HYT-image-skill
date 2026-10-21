@@ -1,0 +1,792 @@
+{
+  "schema_version": 1,
+  "revision": 1,
+  "layouts": [
+    {
+      "layout_id": "main_clean",
+      "name": "商品识别主图",
+      "templates": [
+        "main_product"
+      ],
+      "image_role": "main",
+      "composition_rules": [
+        "One complete sellable object on white; preserve a readable silhouette and natural material highlights.",
+        "Read the product outline first, then actual construction; no illustrative overlays."
+      ],
+      "copy_guidance": "No added text or promotional graphics; retain actual product markings.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.12,
+            0.08,
+            0.88,
+            0.92
+          ],
+          "copy_box": null
+        },
+        "square": {
+          "product_box": [
+            0.06,
+            0.06,
+            0.94,
+            0.94
+          ],
+          "copy_box": null
+        }
+      }
+    },
+    {
+      "layout_id": "editorial_hero",
+      "name": "场景主视觉",
+      "templates": [
+        "product_overview",
+        "lifestyle_simple",
+        "range_story"
+      ],
+      "image_role": "lifestyle",
+      "composition_rules": [
+        "Let a credible environment or person/action frame the actual product as the dominant story subject.",
+        "Use foreground, subject and background depth; keep one quiet headline region rather than emptying half the canvas."
+      ],
+      "copy_guidance": "One benefit-led headline when assigned; atmosphere must not obscure the product.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.08,
+            0.16,
+            0.72,
+            0.94
+          ],
+          "copy_box": [
+            0.55,
+            0.06,
+            0.94,
+            0.27
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.06,
+            0.22,
+            0.94,
+            0.94
+          ],
+          "copy_box": [
+            0.06,
+            0.05,
+            0.88,
+            0.21
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "benefit_split",
+      "name": "卖点与视觉证据并置",
+      "templates": [
+        "product_overview",
+        "hardware_static",
+        "material_macro"
+      ],
+      "image_role": "feature",
+      "composition_rules": [
+        "Pair a strong product/feature visual with a smaller explanation area; use unequal visual weight.",
+        "Lead with the actual evidence, then one benefit and its supporting detail."
+      ],
+      "copy_guidance": "One primary benefit, one short supporting line; icons only if they explain verified information.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.04,
+            0.08,
+            0.62,
+            0.94
+          ],
+          "copy_box": [
+            0.66,
+            0.16,
+            0.96,
+            0.86
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.07,
+            0.95,
+            0.69
+          ],
+          "copy_box": [
+            0.08,
+            0.73,
+            0.92,
+            0.94
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "detail_context",
+      "name": "局部特写与整体关联",
+      "templates": [
+        "material_macro",
+        "hardware_static",
+        "product_overview"
+      ],
+      "image_role": "material",
+      "composition_rules": [
+        "Use a dominant true surface/component closeup plus one smaller contextual view of the same evidenced product.",
+        "Show what the viewer is looking at; control the scale jump and keep inset borders subordinate."
+      ],
+      "copy_guidance": "Short descriptive label or approved benefit; a texture alone does not prove a performance claim.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.3,
+            0.05,
+            0.96,
+            0.94
+          ],
+          "copy_box": [
+            0.05,
+            0.12,
+            0.27,
+            0.8
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.2,
+            0.95,
+            0.92
+          ],
+          "copy_box": [
+            0.07,
+            0.05,
+            0.92,
+            0.18
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "proof_cards",
+      "name": "主证据与辅助细节",
+      "templates": [
+        "product_overview",
+        "material_macro",
+        "hardware_static"
+      ],
+      "image_role": "feature",
+      "composition_rules": [
+        "Give one large proof visual priority and arrange two or three related supporting details in an aligned smaller strip.",
+        "The supporting strip must explain the same buyer question, not turn into unrelated feature thumbnails."
+      ],
+      "copy_guidance": "Keep one headline; use short labels on supporting details only when they add information.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.04,
+            0.1,
+            0.64,
+            0.94
+          ],
+          "copy_box": [
+            0.67,
+            0.06,
+            0.96,
+            0.26
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.19,
+            0.95,
+            0.72
+          ],
+          "copy_box": [
+            0.06,
+            0.04,
+            0.94,
+            0.17
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "step_sequence",
+      "name": "可验证操作序列",
+      "templates": [
+        "mechanism_steps"
+      ],
+      "image_role": "instruction",
+      "composition_rules": [
+        "Arrange evidenced start/intermediate/end states in a clear reading sequence, with consistent product scale and orientation.",
+        "Use deliberate step spacing and numbering; every contact, movement and arrow must match actual operation evidence."
+      ],
+      "copy_guidance": "Concise verified step labels; never invent a mechanism to make the design more dynamic.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.04,
+            0.28,
+            0.96,
+            0.94
+          ],
+          "copy_box": [
+            0.06,
+            0.05,
+            0.94,
+            0.23
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.24,
+            0.95,
+            0.94
+          ],
+          "copy_box": [
+            0.07,
+            0.05,
+            0.93,
+            0.2
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "fit_guide",
+      "name": "尺寸与选择指南",
+      "templates": [
+        "size_fit"
+      ],
+      "image_role": "selection",
+      "composition_rules": [
+        "Place the relevant real product measurement view beside a clearly structured selection table or fit labels.",
+        "Separate measurement marks from product contours; make the decision path easier to scan than the fine print."
+      ],
+      "copy_guidance": "Only verified dimensions and compatibility; missing data is a gap, not a decorative substitute.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.04,
+            0.18,
+            0.44,
+            0.94
+          ],
+          "copy_box": [
+            0.48,
+            0.06,
+            0.96,
+            0.94
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.2,
+            0.48,
+            0.92
+          ],
+          "copy_box": [
+            0.52,
+            0.05,
+            0.96,
+            0.94
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "variant_grid",
+      "name": "真实款式矩阵",
+      "templates": [
+        "range_story"
+      ],
+      "image_role": "selection",
+      "composition_rules": [
+        "Arrange only registered variants in an evenly spaced selection matrix with consistent angle and scale.",
+        "Use colour grouping and one anchor product to aid selection; do not invent additional SKUs."
+      ],
+      "copy_guidance": "Names/labels from registered variants; avoid unsupported best-choice badges.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.05,
+            0.25,
+            0.95,
+            0.94
+          ],
+          "copy_box": [
+            0.07,
+            0.04,
+            0.93,
+            0.21
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.25,
+            0.95,
+            0.94
+          ],
+          "copy_box": [
+            0.07,
+            0.04,
+            0.93,
+            0.21
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "evidence_compare",
+      "name": "有依据的对比",
+      "templates": [
+        "product_overview",
+        "hardware_static",
+        "range_story"
+      ],
+      "image_role": "feature",
+      "composition_rules": [
+        "Compare evidenced states or approved own-product options in balanced columns with identical visual scale.",
+        "Let one true difference dominate, supported by precise labels rather than invented superiority."
+      ],
+      "copy_guidance": "Use approved factual wording; no fabricated competitor, ratings or performance data.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.06,
+            0.27,
+            0.94,
+            0.94
+          ],
+          "copy_box": [
+            0.06,
+            0.05,
+            0.94,
+            0.22
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.05,
+            0.26,
+            0.95,
+            0.93
+          ],
+          "copy_box": [
+            0.07,
+            0.05,
+            0.93,
+            0.22
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "asymmetric_story",
+      "name": "非对称主景与细节",
+      "templates": [
+        "product_overview",
+        "material_macro",
+        "lifestyle_simple"
+      ],
+      "image_role": "feature",
+      "composition_rules": [
+        "Use one large scene or product view and a narrow secondary detail column, with clearly unequal visual weights.",
+        "Align the column and primary subject around a shared baseline; maintain one primary focal point."
+      ],
+      "copy_guidance": "One short headline; keep each secondary detail tied to the same promise.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.03,
+            0.1,
+            0.66,
+            0.95
+          ],
+          "copy_box": [
+            0.7,
+            0.08,
+            0.97,
+            0.3
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.04,
+            0.23,
+            0.67,
+            0.95
+          ],
+          "copy_box": [
+            0.06,
+            0.04,
+            0.94,
+            0.19
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "scene_triptych",
+      "name": "多情境叙事",
+      "templates": [
+        "lifestyle_simple"
+      ],
+      "image_role": "lifestyle",
+      "composition_rules": [
+        "Divide the image into a dominant lifestyle scene and two subordinate scenes with distinct real use contexts.",
+        "Make the person, action and environment recognizable; keep product identity consistent without copying the same wrist crop."
+      ],
+      "copy_guidance": "Optional short situation labels; do not imply unsupported sports or operating capabilities.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.03,
+            0.2,
+            0.97,
+            0.95
+          ],
+          "copy_box": [
+            0.06,
+            0.04,
+            0.94,
+            0.17
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.04,
+            0.22,
+            0.96,
+            0.95
+          ],
+          "copy_box": [
+            0.06,
+            0.04,
+            0.94,
+            0.19
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "radial_detail",
+      "name": "中心产品与少量注释",
+      "templates": [
+        "product_overview",
+        "hardware_static"
+      ],
+      "image_role": "feature",
+      "composition_rules": [
+        "Keep an actual product centrally legible and place a few related evidence details around its free perimeter.",
+        "Connect labels spatially without crossing product contours or obscuring attachment interfaces."
+      ],
+      "copy_guidance": "Limit labels to the assigned message; no dense halo of decorative badges.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.27,
+            0.14,
+            0.73,
+            0.94
+          ],
+          "copy_box": [
+            0.03,
+            0.05,
+            0.97,
+            0.18
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.22,
+            0.21,
+            0.78,
+            0.88
+          ],
+          "copy_box": [
+            0.06,
+            0.04,
+            0.94,
+            0.18
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "type_led",
+      "name": "文字与产品共同构图",
+      "templates": [
+        "product_overview",
+        "range_story"
+      ],
+      "image_role": "feature",
+      "composition_rules": [
+        "Balance a bold concise approved headline with a full recognizable product silhouette, using scale and alignment for impact.",
+        "Typography and product form should share a deliberate axis rather than a generic empty-side layout."
+      ],
+      "copy_guidance": "Exact concise copy only; type must not overlap important product structure.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.42,
+            0.12,
+            0.96,
+            0.94
+          ],
+          "copy_box": [
+            0.04,
+            0.08,
+            0.4,
+            0.86
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.12,
+            0.32,
+            0.94,
+            0.94
+          ],
+          "copy_box": [
+            0.05,
+            0.06,
+            0.93,
+            0.28
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "lifestyle_full",
+      "name": "完整人物与环境场景",
+      "templates": [
+        "lifestyle_simple"
+      ],
+      "image_role": "lifestyle",
+      "composition_rules": [
+        "Show a recognizable person performing a relevant activity in a credible environment; make the worn product readable at natural scale.",
+        "Use the activity and gaze/action to guide attention toward the product without resorting to a cropped anonymous wrist."
+      ],
+      "copy_guidance": "Copy may be absent when the scene tells the assigned story; the approved task decides.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.06,
+            0.08,
+            0.94,
+            0.96
+          ],
+          "copy_box": [
+            0.05,
+            0.05,
+            0.4,
+            0.27
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.04,
+            0.18,
+            0.96,
+            0.97
+          ],
+          "copy_box": [
+            0.06,
+            0.04,
+            0.94,
+            0.16
+          ]
+        }
+      }
+    },
+    {
+      "layout_id": "closing_story",
+      "name": "选择后的生活收束",
+      "templates": [
+        "range_story",
+        "product_overview"
+      ],
+      "image_role": "lifestyle",
+      "composition_rules": [
+        "Use a clear product and a relevant contextual cue to close the visual story with the intended ownership/use feeling.",
+        "Lower information density after explanation-heavy images; retain visual continuity without repeating an earlier composition."
+      ],
+      "copy_guidance": "One restrained approved closing line, or intentional no-copy photography.",
+      "zones": {
+        "wide": {
+          "product_box": [
+            0.18,
+            0.16,
+            0.82,
+            0.94
+          ],
+          "copy_box": [
+            0.05,
+            0.04,
+            0.95,
+            0.2
+          ]
+        },
+        "square": {
+          "product_box": [
+            0.1,
+            0.24,
+            0.9,
+            0.94
+          ],
+          "copy_box": [
+            0.06,
+            0.05,
+            0.94,
+            0.2
+          ]
+        }
+      }
+    }
+  ],
+  "styles": [
+    {
+      "style_id": "editorial_daylight",
+      "name": "明亮生活杂志",
+      "palette_roles": "warm neutral environment with a restrained brand accent",
+      "typography": "editorial sans hierarchy, short headlines",
+      "lighting": "directional daylight with natural depth",
+      "treatments": {
+        "main": "Keep white main-image background and actual product only; use lighting/scale, not overlays or scene colours.",
+        "material": "grazing daylight and believable surface scale",
+        "feature": "balanced benefit headline and contextual proof",
+        "lifestyle": "recognizable daily activity in a layered natural environment",
+        "selection": "quiet aligned labels and clean selection spacing",
+        "instruction": "Prioritize clear evidenced state changes, consistent scale and concise step hierarchy."
+      }
+    },
+    {
+      "style_id": "active_bright",
+      "name": "明快运动生活",
+      "palette_roles": "bright environmental neutrals with one energetic accent",
+      "typography": "bold compact sans with strong headline contrast",
+      "lighting": "clear outdoor daylight and crisp contact shadows",
+      "treatments": {
+        "main": "Keep white main-image background and actual product only; use lighting/scale, not overlays or scene colours.",
+        "material": "large tactile surface with a clean lively silhouette",
+        "feature": "high-contrast benefit block with true visual evidence",
+        "lifestyle": "full active scene with credible motion and natural product scale",
+        "selection": "simple high-contrast decision labels",
+        "instruction": "Prioritize clear evidenced state changes, consistent scale and concise step hierarchy."
+      }
+    },
+    {
+      "style_id": "precision_tech",
+      "name": "精密功能表达",
+      "palette_roles": "cool or neutral environment with a controlled technical accent",
+      "typography": "precise sans hierarchy and restrained factual labels",
+      "lighting": "controlled side light revealing actual component edges",
+      "treatments": {
+        "main": "Keep white main-image background and actual product only; use lighting/scale, not overlays or scene colours.",
+        "material": "macro lighting shows real weave/finish without invented internal layers",
+        "feature": "ordered proof panels and factual small diagrams",
+        "lifestyle": "credible use environment with a clearly readable device/product interaction",
+        "selection": "structured measured layout and verified specs",
+        "instruction": "Prioritize clear evidenced state changes, consistent scale and concise step hierarchy."
+      }
+    },
+    {
+      "style_id": "warm_daily",
+      "name": "温暖日常",
+      "palette_roles": "warm home neutrals with soft muted accent",
+      "typography": "friendly readable sans hierarchy",
+      "lighting": "warm window light, soft shadows with visible depth",
+      "treatments": {
+        "main": "Keep white main-image background and actual product only; use lighting/scale, not overlays or scene colours.",
+        "material": "tactile material against a simple relatable context cue",
+        "feature": "approachable benefit line and one evidence detail",
+        "lifestyle": "complete everyday person/action with comfortable environmental context",
+        "selection": "unhurried spacing and plainly worded selection help",
+        "instruction": "Prioritize clear evidenced state changes, consistent scale and concise step hierarchy."
+      }
+    },
+    {
+      "style_id": "fashion_minimal",
+      "name": "轻时尚编辑",
+      "palette_roles": "restrained environment with deliberate tonal contrast",
+      "typography": "confident editorial typography and generous line spacing",
+      "lighting": "sculpted natural or studio light retaining true finish",
+      "treatments": {
+        "main": "Keep white main-image background and actual product only; use lighting/scale, not overlays or scene colours.",
+        "material": "surface and real contour used as compositional rhythm",
+        "feature": "one strong claim-supported visual rather than a badge grid",
+        "lifestyle": "editorial person/wardrobe/environment suited to the actual audience",
+        "selection": "consistent silhouettes, variant scales and concise labels",
+        "instruction": "Prioritize clear evidenced state changes, consistent scale and concise step hierarchy."
+      }
+    },
+    {
+      "style_id": "dramatic_studio",
+      "name": "戏剧性棚拍",
+      "palette_roles": "dark or midtone set with a controlled accent, never a product recolour",
+      "typography": "high-contrast concise sans hierarchy",
+      "lighting": "directional key/rim light with readable shadow-side structure",
+      "treatments": {
+        "main": "Keep white main-image background and actual product only; use lighting/scale, not overlays or scene colours.",
+        "material": "raking highlights separate true surface from background",
+        "feature": "a dominant proof visual and sparse integrated explanation",
+        "lifestyle": "a believable controlled scene; do not hide product fit in darkness",
+        "selection": "bright readable labels and honest option separation",
+        "instruction": "Prioritize clear evidenced state changes, consistent scale and concise step hierarchy."
+      }
+    }
+  ],
+  "narratives": [
+    {
+      "framework_id": "DIRECT",
+      "name": "单任务直达",
+      "stages": {
+        "single_message": "Identify or explain the one explicitly requested task without inventing a multi-image sales funnel."
+      }
+    },
+    {
+      "framework_id": "AIDA",
+      "name": "识别—相关—证据—选择",
+      "stages": {
+        "recognition": "Make the actual product recognizable and relevant.",
+        "relevance": "Show the buyer situation or desired use context.",
+        "proof": "Explain one supported differentiator with visible/factual proof.",
+        "decision": "Resolve fit, variants, use or another concrete buying question."
+      }
+    },
+    {
+      "framework_id": "JTBD",
+      "name": "情境—任务—产品帮助—结果",
+      "stages": {
+        "situation": "Establish the real situation and customer task.",
+        "solution": "Show how the actual product fits that task, using supported claims only.",
+        "proof": "Give evidence for the specific promised help.",
+        "outcome": "Show a credible outcome or decision context without invented before/after results."
+      }
+    },
+    {
+      "framework_id": "PROOF_TO_USE",
+      "name": "理解—验证—使用—选择",
+      "stages": {
+        "understand": "Introduce the actual product and important material/construction.",
+        "verify": "Present evidence for a concrete differentiator.",
+        "use": "Show an evidenced operation or a credible relevant lifestyle.",
+        "choose": "Help select size/variant or summarize a supported ownership benefit."
+      }
+    }
+  ],
+  "constraints": [
+    "Original product evidence controls identity and supported facts.",
+    "Graphic effects cannot establish a product claim.",
+    "Boxes are layout starting points, not platform specifications."
+  ]
+}

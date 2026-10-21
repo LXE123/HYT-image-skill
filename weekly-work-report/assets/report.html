@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>每周工作报告</title>
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#14202e;--mute:#5d6b7c;--line:#d8e0e9;--blue:#2b5bff;--blue-s:#e3eaff;--ok:#1b8f63;--ok-s:#dcf3e9;--mid:#b87408;--mid-s:#fbeed2;--bad:#c93a52;--bad-s:#fadfe4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1620;--card:#18222f;--ink:#e8eef6;--mute:#93a1b3;--line:#2a3646;--blue:#7f9bff;--blue-s:#223059;--ok:#4cc79a;--ok-s:#17372c;--mid:#e8b04a;--mid-s:#3b2f14;--bad:#f07a8e;--bad-s:#41202a}}
+:root[data-theme="dark"]{--bg:#0f1620;--card:#18222f;--ink:#e8eef6;--mute:#93a1b3;--line:#2a3646;--blue:#7f9bff;--blue-s:#223059;--ok:#4cc79a;--ok-s:#17372c;--mid:#e8b04a;--mid-s:#3b2f14;--bad:#f07a8e;--bad-s:#41202a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.7 "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:28px 18px 60px}
+header h1{font-size:clamp(28px,6vw,44px);line-height:1.2;margin:0 0 6px;font-weight:800;letter-spacing:.02em}
+header p{margin:0;color:var(--mute)}
+.ruler{margin:26px 0 8px;display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.tick{height:34px;border-radius:6px;background:var(--line);position:relative;overflow:hidden}
+.tick i{position:absolute;inset:0;background:var(--blue);transform:scaleY(0);transform-origin:bottom;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.tick.on i{transform:scaleY(1)}
+.tick span{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--mute);z-index:1;transition:color .3s}
+.tick.on span{color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 26px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{font-size:30px;line-height:1.1;display:block;font-variant-numeric:tabular-nums}
+.stat small{color:var(--mute)}
+nav{display:flex;gap:6px;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:6px;margin-bottom:22px;position:relative;isolation:isolate}
+nav button{font:inherit;font-weight:600;color:var(--mute);background:none;border:0;border-radius:8px;padding:10px 14px;cursor:pointer;white-space:nowrap;position:relative;z-index:1;transition:color 180ms ease}
+nav button[aria-selected=true]{color:var(--blue)}
+.tab-indicator{position:absolute;left:0;top:6px;bottom:6px;background:var(--blue-s);border-radius:8px;pointer-events:none;z-index:0}
+.tab-indicator.ready{transition:transform 420ms cubic-bezier(.22,.85,.28,1.03),width 420ms cubic-bezier(.22,.85,.28,1.03)}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.panel{display:none}.panel.on{display:block}
+.panel-viewport{position:relative;overflow:hidden;isolation:isolate}
+.full .panel-viewport{display:none}
+@media print{.panel-viewport{display:none!important}}
+.split{display:grid;grid-template-columns:230px 1fr;gap:16px}
+.picks{display:flex;flex-direction:column;gap:8px}
+.pick{font:inherit;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;color:var(--ink)}
+.pick[aria-pressed=true]{border-color:var(--blue);background:var(--blue-s)}
+.pick small{display:block;color:var(--mute)}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.detail h3{margin:0 0 4px;font-size:20px}
+.detail ul{list-style:none;padding:0;margin:14px 0 0}
+.detail li{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--line);animation:none}
+.tag{flex:none;align-self:flex-start;font-size:12px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--blue-s);color:var(--blue);margin-top:3px}
+@keyframes in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+.goalhead{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.donut{width:150px;height:150px;flex:none}
+.donut circle{fill:none;stroke-width:14;transition:opacity 160ms,stroke-dasharray 220ms ease}
+.donut text{text-anchor:middle;fill:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:5px 14px;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.row{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.row[hidden]{display:none}
+.row>button{width:100%;font:inherit;color:inherit;background:none;border:0;text-align:left;padding:14px 16px;cursor:pointer;display:flex;gap:12px;align-items:center}
+.row>button .t{flex:1}
+.row>button small{display:block;color:var(--mute)}
+.st{font-size:13px;font-weight:700;padding:2px 10px;border-radius:99px;white-space:nowrap}
+.ok{background:var(--ok-s);color:var(--ok)}.mid{background:var(--mid-s);color:var(--mid)}.bad{background:var(--bad-s);color:var(--bad)}
+.body{display:grid;grid-template-rows:0fr;transition:grid-template-rows 180ms ease}
+.row.open .body{grid-template-rows:1fr}
+.body>div{overflow:hidden}
+.body .in{padding:0 16px 14px;color:var(--mute)}
+.steps{display:flex;gap:4px;margin:10px 0 2px}
+.steps span{flex:1;font-size:12px;text-align:center;padding:5px 2px;border-radius:6px;background:var(--line);color:var(--mute)}
+.steps .d{background:var(--ok-s);color:var(--ok)}.steps .c{background:var(--mid);color:#fff;font-weight:700}
+.next{display:grid;gap:10px}
+.nx{display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer;width:100%;font:inherit;color:inherit;text-align:left}
+.box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-size:15px;margin-top:2px;transition:.2s}
+.nx[aria-pressed=true] .box{background:var(--blue);border-color:var(--blue)}
+.nx[aria-pressed=true] h4{text-decoration:line-through;color:var(--mute)}
+.nx h4{margin:0}.nx p{margin:2px 0 0;color:var(--mute);font-size:14px}
+.bar{height:8px;background:var(--line);border-radius:9px;overflow:hidden;margin:4px 0 16px}
+.bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s}
+.sum{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 22px}
+.sum section{padding:14px 0;border-top:1px solid var(--line)}
+.sum section:first-child{border-top:0}
+.sum h3{margin:0 0 4px;font-size:17px}.sum p{margin:0}
+.theme{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:99px;padding:6px 14px;cursor:pointer}
+@media (max-width:640px){.split{grid-template-columns:1fr}.picks{flex-direction:row;overflow-x:auto}.pick{flex:none}.stats{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+a{color:var(--blue);text-underline-offset:3px}.intro{margin:6px 0;color:var(--mute)}.repo{font-size:13px}.section-title{font-size:20px;margin:0 0 18px}.actions{display:flex;gap:8px;margin:0 0 18px}.actions button{font:inherit;font-size:14px;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}footer{margin-top:28px;font-size:12px;color:var(--mute)}
+#full-report h2{font-size:22px;margin:28px 0 14px}#full-report h3{font-size:18px;margin:0 0 6px}#full-report .report-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:12px}#full-report p{margin:5px 0}#full-report ul{padding-left:22px;margin:10px 0 0}#full-report .st{display:inline-block;margin-right:8px}.full nav,.full .panel{display:none}.full #full-report{display:block}
+@media print{body{background:white;color:#14202e;font-size:11pt}.wrap{max-width:none;padding:0}nav,.panel,.actions,.theme,.ruler,.stats{display:none!important}#full-report{display:block!important}#full-report .report-card{break-inside:avoid;border-color:#d8e0e9;background:white}#full-report h2{break-after:avoid}header h1{font-size:28pt}a{color:#2b5bff}footer{margin-top:16px}@page{size:A4;margin:16mm}}
+
+.headline{margin:20px 0 0!important;padding:14px 18px;border-left:4px solid var(--blue);background:var(--blue-s);border-radius:0 8px 8px 0;color:var(--ink)!important;font-size:18px;line-height:1.65;font-weight:600}
+.split{grid-template-columns:210px 1fr}.detail{min-height:260px}.pick{font-weight:600}.detail li{line-height:1.75}.ruler{margin-top:22px}.wrap{padding-top:32px}.stat b{color:var(--blue)}
+.meeting-sheet{display:none}
+body[data-sheet=true] .wrap{max-width:1000px;padding:36px 30px}
+body[data-sheet=true] .ruler,body[data-sheet=true] .stats,body[data-sheet=true] .actions,body[data-sheet=true] nav,body[data-sheet=true] .panel,body[data-sheet=true] #full-report,body[data-sheet=true] .theme,body[data-sheet=true] footer{display:none!important}
+body[data-sheet=true] .meeting-sheet{display:block}
+.meeting-sheet h2{font-size:22px;margin:23px 0 11px}.meeting-sheet h3{font-size:18px;margin:0 0 8px}.meeting-sheet .results{display:grid;grid-template-columns:1fr 1fr;gap:12px}.meeting-sheet .sheet-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}.meeting-sheet ul{padding-left:20px;margin:0}.meeting-sheet li+li{margin-top:5px}.meeting-sheet table{width:100%;border-collapse:collapse;background:var(--card);font-size:15px}.meeting-sheet th{text-align:left;background:var(--blue-s);font-weight:600}.meeting-sheet td,.meeting-sheet th{padding:10px 12px;border-bottom:1px solid var(--line)}.meeting-sheet .step{display:flex;align-items:baseline;gap:14px;background:var(--card);padding:11px 15px;border:1px solid var(--line);border-radius:8px;margin:8px 0}.meeting-sheet .step b{white-space:nowrap}.meeting-sheet .step span{color:var(--mute);font-size:15px}.meeting-sheet .blocker{padding:13px 16px;background:var(--mid-s);border-radius:8px;font-size:15px;line-height:1.75}.meeting-sheet .stamp{color:var(--mute);font-size:13px;margin-top:18px}
+@media(max-width:640px){.split{grid-template-columns:1fr}.picks{flex-direction:row}.headline{font-size:17px}.stats{grid-template-columns:repeat(2,1fr)}.stat small{font-size:12px}.goalhead{gap:12px}.meeting-sheet .results{grid-template-columns:1fr}.meeting-sheet .step{display:block}}
+@media print{.headline{background:#e3eaff!important;color:#14202e!important;border-left-color:#2b5bff!important;font-size:13pt}.full #full-report h2{font-size:16pt;margin:16px 0 9px}#full-report .report-card{padding:11px 14px;margin-bottom:8px}#full-report p{font-size:10pt}.meeting-sheet{display:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>每周工作报告</h1>
+  <p id="period"></p>
+  <div class="ruler" id="ruler" aria-hidden="true"></div>
+  <p class="headline" id="headline"></p>
+  <div class="stats" id="stats"></div>
+<div class="actions"><button id="view-all" type="button" aria-pressed="false">展开全文</button><button id="print-report" type="button">打印报告</button></div></header>
+
+<nav role="tablist" id="tabs">
+  <button type="button" id="tab-work" aria-controls="work" role="tab" aria-selected="true" data-p="work">一、本周工作内容</button>
+  <button type="button" id="tab-goal" aria-controls="goal" role="tab" aria-selected="false" data-p="goal">二、上次目标</button>
+  <button type="button" id="tab-next" aria-controls="next" role="tab" aria-selected="false" data-p="next">三、下阶段目标</button>
+  <button type="button" id="tab-sum" aria-controls="sum" role="tab" aria-selected="false" data-p="sum">四、总结</button>
+</nav>
+
+<div class="panel-viewport" id="panel-viewport">
+<section class="panel on" id="work" role="tabpanel" aria-labelledby="tab-work"><div class="split"><div class="picks" id="picks"></div><div class="detail" id="detail"></div></div></section>
+
+<section class="panel" id="goal" role="tabpanel" aria-labelledby="tab-goal">
+  <h2 class="section-title">上期目标完成情况</h2><div class="goalhead">
+    <svg class="donut" viewBox="0 0 100 100" id="donut" role="img" aria-label="上期目标状态分布"></svg>
+    <div>
+      <div class="chips" id="chips"></div>
+      <p style="color:var(--mute);margin:10px 0 0;font-size:14px">点击筛选，点击条目展开详情。</p>
+    </div>
+  </div>
+  <div id="rows"></div>
+</section>
+
+<section class="panel" id="next" role="tabpanel" aria-labelledby="tab-next">
+  <p style="margin:0;color:var(--mute)">勾选表示已排入本阶段推进，可随时调整。</p>
+  <div class="bar"><i id="nbar"></i></div>
+  <div class="next" id="nlist"></div>
+</section>
+
+<section class="panel" id="sum" role="tabpanel" aria-labelledby="tab-sum"><div class="sum" id="summary"></div></section>
+</div>
+<article id="full-report" hidden></article>
+<footer id="footer"></footer>
+</div>
+<button class="theme" id="theme" type="button">切换明暗</button>
+
+<script id="report-data" type="application/json">__REPORT_DATA_JSON__</script>
+<script>
+const $=s=>document.querySelector(s);
+
+const reportData=JSON.parse(document.getElementById('report-data').textContent);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const statusClass=s=>['已完成','完成','阶段目标完成'].includes(s)?'ok':['待推进','未开始','未完成','暂缓','终止'].includes(s)?'bad':'mid';
+const work=reportData.work.map(w=>({n:esc(w.title),s:esc(w.summary),items:w.items.map(x=>[esc(x.tag),esc(x.text)])}));
+const goals=reportData.goals.map(g=>({g:'',t:esc(g.title),k:statusClass(g.status),l:esc(g.status),d:esc(g.note)}));
+const next=reportData.next.map(x=>[esc(x.title),esc(x.text)]);
+const hasGoals=goals.length>0;
+const nextHeading=hasGoals?'三、下阶段目标':'二、下阶段目标';
+const sumHeading=hasGoals?'四、总结':'三、总结';
+if(!hasGoals){$('#tab-goal').remove();$('#goal').hidden=true;$('#tab-next').textContent=nextHeading;$('#tab-sum').textContent=sumHeading;}
+$('#period').textContent=`周期：${reportData.period_start} — ${reportData.period_end || reportData.meeting_date}`;
+$('#headline').textContent=reportData.headline;
+$('#footer').textContent=`${reportData.week_name} · 周会日期：${reportData.meeting_date}`;
+document.title=`每周工作报告 · ${reportData.period_start} — ${reportData.period_end || reportData.meeting_date}`;
+const stats=hasGoals?[[work.length,'条工作主线'],[goals.length,'项上期目标'],[next.length,'项下阶段重点']]:[[work.length,'条工作主线'],[next.length,'项下阶段重点']];
+$('#stats').innerHTML=stats.map(([n,t])=>`<div class="stat"><b>${n}</b><small>${t}</small></div>`).join('');
+if(!hasGoals)$('#stats').style.gridTemplateColumns='repeat(2, minmax(0, 1fr))';
+
+// ruler: the one orchestrated moment on load
+const dayCount=Math.round((Date.parse((reportData.period_end||reportData.meeting_date)+'T12:00:00Z')-Date.parse(reportData.period_start+'T12:00:00Z'))/86400000)+1;
+const days=Array.from({length:dayCount},(_,i)=>{const d=new Date(reportData.period_start+'T12:00:00');d.setDate(d.getDate()+i);return (d.getMonth()+1)+'/'+d.getDate()});
+const ru=$('#ruler');
+ru.style.gridTemplateColumns=`repeat(${dayCount}, minmax(0, 1fr))`;
+days.forEach(d=>{ru.insertAdjacentHTML('beforeend',`<div class="tick"><i></i><span>${d}</span></div>`)});
+[...ru.children].forEach(t=>t.classList.add('on'));
+document.querySelectorAll('[data-n]').forEach(el=>{const n=+el.dataset.n;let c=0;const id=setInterval(()=>{el.textContent=++c;if(c>=n)clearInterval(id)},260)});
+
+// Small, fast transitions; report content stays visible if animations are interrupted.
+const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+const printMedia=window.matchMedia('print');
+const runningReveals=new Set();
+const runningTransitions=new Set();
+let motionVersion=0;
+function cancelReveals(){for(const animation of [...runningReveals])animation.cancel();runningReveals.clear();}
+function stopTransitions(){
+ motionVersion++;
+ for(const animation of [...runningTransitions])animation.cancel();runningTransitions.clear();
+ document.querySelectorAll('.panel').forEach(p=>p.inert=false);
+}
+function settleSelectedPanel(){
+ const selected=document.querySelector('#tabs button[aria-selected=true]');
+ if(selected)document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id===selected.dataset.p));
+}
+function cancelAllMotion(settle=false){cancelReveals();stopTransitions();if(settle)settleSelectedPanel();}
+function revealContent(container){
+ cancelReveals();
+ if(reducedMotion.matches||printMedia.matches)return;
+ const selector='.pick,.detail > h3,.detail > .intro,.detail li,.section-title,.goalhead,.row:not([hidden]),.nx,.sum section';
+ const elements=[...container.querySelectorAll(selector)].filter(el=>el.getClientRects().length)
+   .sort((a,b)=>{const x=a.getBoundingClientRect(),y=b.getBoundingClientRect();return x.top-y.top||x.left-y.left;});
+ elements.forEach((el,i)=>{
+   const animation=el.animate([
+     {opacity:0,transform:'translateY(-6px)',offset:0},
+     {opacity:1,transform:'translateY(1px)',offset:.82},
+     {opacity:1,transform:'translateY(0)',offset:1}
+   ],{duration:300,delay:Math.min(i*40,160),easing:'cubic-bezier(.22,.8,.25,1)',fill:'both'});
+   runningReveals.add(animation);
+   animation.onfinish=()=>{runningReveals.delete(animation);animation.cancel();};
+   animation.oncancel=()=>runningReveals.delete(animation);
+ });
+}
+function transitionPanel(target,direction){
+ const viewport=$('#panel-viewport'),outgoing=document.querySelector('.panel.on'),version=motionVersion;
+ if(outgoing===target)return;
+ const previousHeight=viewport.getBoundingClientRect().height;
+ function track(animation,done){
+   runningTransitions.add(animation);
+   animation.oncancel=()=>runningTransitions.delete(animation);
+   animation.onfinish=()=>{runningTransitions.delete(animation);animation.cancel();if(version===motionVersion&&done)done();};
+ }
+ function enter(){
+   if(version!==motionVersion)return;
+   document.querySelectorAll('.panel').forEach(p=>{p.classList.toggle('on',p===target);p.inert=false;});
+   if(target.id==='goal')drawDonut(filter);
+   if(reducedMotion.matches||printMedia.matches)return;
+   const nextHeight=target.getBoundingClientRect().height;
+   track(viewport.animate([{height:previousHeight+'px'},{height:nextHeight+'px'}],
+     {duration:380,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'}));
+   track(target.animate([{opacity:0,transform:`translateX(${direction*26}px)`},{opacity:1,transform:'translateX(0)'}],
+     {duration:380,easing:'cubic-bezier(.22,1,.36,1)',fill:'both'}));
+   revealContent(target);
+ }
+ if(!outgoing||reducedMotion.matches||printMedia.matches){enter();return;}
+ outgoing.inert=true;
+ track(outgoing.animate([{opacity:1,transform:'translateX(0)'},{opacity:0,transform:`translateX(${-direction*20}px)`}],
+   {duration:140,easing:'cubic-bezier(.4,0,1,1)',fill:'both'}),enter);
+}
+window.addEventListener('beforeprint',()=>cancelAllMotion(true));
+printMedia.addEventListener('change',e=>{if(e.matches)cancelAllMotion(true);});
+reducedMotion.addEventListener('change',e=>{if(e.matches)cancelAllMotion(true);});
+window.addEventListener('resize',()=>{cancelAllMotion(true);syncIndicator(true);});
+
+// Smooth Tabs-inspired moving selection block and directional content transitions.
+const tabBar=$('#tabs');
+const tabIndicator=document.createElement('span');
+tabIndicator.className='tab-indicator';tabIndicator.setAttribute('aria-hidden','true');tabBar.appendChild(tabIndicator);
+function syncIndicator(instant=false){
+ const selected=tabBar.querySelector('button[aria-selected=true]');
+ if(!selected||!tabBar.clientWidth)return;
+ if(instant)tabIndicator.classList.remove('ready');
+ tabIndicator.style.width=selected.offsetWidth+'px';
+ tabIndicator.style.transform=`translate3d(${selected.offsetLeft}px,0,0)`;
+ if(instant)requestAnimationFrame(()=>tabIndicator.classList.add('ready'));
+}
+syncIndicator(true);
+const tabResizeObserver=new ResizeObserver(()=>syncIndicator(true));
+tabResizeObserver.observe(tabBar);
+tabBar.querySelectorAll('button').forEach(b=>tabResizeObserver.observe(b));
+if(document.fonts)document.fonts.ready.then(()=>syncIndicator(true));
+
+tabBar.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b||b.getAttribute('aria-selected')==='true')return;
+ const buttons=[...tabBar.querySelectorAll('button')],previous=tabBar.querySelector('button[aria-selected=true]');
+ const direction=buttons.indexOf(b)>buttons.indexOf(previous)?1:-1;
+ cancelAllMotion();
+ tabBar.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));
+ syncIndicator();
+ const left=b.offsetLeft,right=left+b.offsetWidth;
+ if(left<tabBar.scrollLeft||right>tabBar.scrollLeft+tabBar.clientWidth){
+   tabBar.scrollTo({left:left<tabBar.scrollLeft?left:right-tabBar.clientWidth,behavior:reducedMotion.matches?'instant':'smooth'});
+ }
+ transitionPanel(document.getElementById(b.dataset.p),direction);
+});
+tabBar.addEventListener('keydown',e=>{
+ if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+ const buttons=[...tabBar.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(i<0)return;
+ e.preventDefault();const n=e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+(e.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;
+ buttons[n].focus();buttons[n].click();
+});
+
+// work panel
+let activeWork=-1;
+function showWork(i,motion=true){
+ if(i===activeWork)return;activeWork=i;cancelAllMotion(true);
+ document.querySelectorAll('.pick').forEach((p,j)=>p.setAttribute('aria-pressed',i===j));
+ const w=work[i];
+ $('#detail').innerHTML=`<h3>${w.n}</h3><p class="intro">${w.s}</p><ul>${w.items.map(x=>`<li><span class="tag">${x[0]}</span><span>${x[1]}</span></li>`).join('')}</ul>`;
+ if(motion)revealContent($('#detail'));
+}
+work.forEach((w,i)=>{const b=document.createElement('button');b.className='pick';b.innerHTML=`${w.n}<small>${w.items.length} 项要点</small>`;b.onclick=()=>showWork(i);$('#picks').appendChild(b)});
+showWork(0,false);
+
+// goals
+let filter='all';
+const colors={ok:'var(--ok)',mid:'var(--mid)',bad:'var(--bad)'};
+function drawDonut(f){
+ const C=2*Math.PI*38,seg=C/goals.length;let off=0;
+ const cnt={ok:0,mid:0,bad:0};goals.forEach(g=>cnt[g.k]++);
+ let html='<circle cx="50" cy="50" r="38" stroke="var(--line)"/>';
+ goals.forEach(g=>{html+=`<circle cx="50" cy="50" r="38" stroke="${colors[g.k]}" stroke-dasharray="0 ${C}" data-d="${seg-2} ${C-seg+2}" transform="rotate(${-90+off*360/C} 50 50)" style="opacity:${f==='all'||f===g.k?1:.15}"/>`;off+=seg});
+ html+=`<text x="50" y="50" font-size="20" font-weight="800">${cnt.ok}/${goals.length}</text><text x="50" y="64" font-size="8" style="fill:var(--mute)">已完成</text>`;
+ $('#donut').innerHTML=html;
+ requestAnimationFrame(()=>document.querySelectorAll('#donut circle[data-d]').forEach((c,i)=>setTimeout(()=>c.setAttribute('stroke-dasharray',c.dataset.d),reducedMotion.matches?0:i*15)));
+}
+function drawRows(){
+ $('#rows').innerHTML=goals.map((g,i)=>`<div class="row" data-k="${g.k}"><button aria-expanded="false"><span class="t">${g.t}<small>${g.g}</small></span><span class="st ${g.k}">${g.l}</span></button><div class="body"><div><div class="in">${g.d}${g.steps?`<div class="steps">${g.steps.map((s,j)=>`<span class="${j<g.cur?'d':j===g.cur?'c':''}">${s}</span>`).join('')}</div>`:''}</div></div></div></div>`).join('');
+ document.querySelectorAll('.row>button').forEach(b=>b.onclick=()=>{const r=b.parentElement;const o=r.classList.toggle('open');b.setAttribute('aria-expanded',o)});
+}
+function applyFilter(f){filter=f;
+ document.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.f===f));
+ document.querySelectorAll('.row').forEach(r=>r.hidden=!(f==='all'||r.dataset.k===f));
+ document.querySelectorAll('#donut circle[data-d]').forEach((c,i)=>c.style.opacity=(f==='all'||f===goals[i].k)?1:.15)}
+function filterWithMotion(f){cancelAllMotion(true);applyFilter(f);revealContent($('#rows'));}
+[['all','全部 '+goals.length],['ok','已完成 '+goals.filter(g=>g.k==='ok').length],['mid','阶段完成／待确认 '+goals.filter(g=>g.k==='mid').length],['bad','待推进 '+goals.filter(g=>g.k==='bad').length]].forEach(([f,t])=>{const b=document.createElement('button');b.className='chip';b.dataset.f=f;b.textContent=t;b.onclick=()=>filterWithMotion(f);$('#chips').appendChild(b)});
+drawRows();applyFilter('all');
+
+// next
+function upd(){const n=document.querySelectorAll('.nx[aria-pressed=true]').length;$('#nbar').style.width=n/next.length*100+'%'}
+next.forEach(([t,s])=>{const b=document.createElement('button');b.className='nx';b.setAttribute('aria-pressed','false');b.innerHTML=`<span class="box">✓</span><span><h4>${t}</h4><p>${s}</p></span>`;b.onclick=()=>{b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');upd()};$('#nlist').appendChild(b)});
+
+// theme
+$('#theme').onclick=()=>{const r=document.documentElement;const dark=getComputedStyle(r).getPropertyValue('--bg').trim()==='#0f1620';r.dataset.theme=dark?'light':'dark'};
+
+const summary=reportData.summary.map(x=>[esc(x.title),esc(x.text)]);
+$('#sum').innerHTML='<div class="sum">'+summary.map(([t,p])=>`<section><h3>${t}</h3><p>${p}</p></section>`).join('')+'</div>';
+const goalSection=hasGoals?`<h2>二、上期目标完成情况</h2>${goals.map((g,i)=>`<section class="report-card"><h3>${i+1}. ${g.t}</h3><p><span class="st ${g.k}">${g.l}</span>${g.d}</p></section>`).join('')}`:'';
+$('#full-report').innerHTML=`<h2>一、本周工作内容</h2>${work.map((w,i)=>`<section class="report-card"><h3>${i+1}. ${w.n}</h3><p class="intro">${w.s}</p><ul>${w.items.map(x=>`<li>${x[1]}</li>`).join('')}</ul></section>`).join('')}${goalSection}<h2>${nextHeading}</h2>${next.map(([t,s],i)=>`<section class="report-card"><h3>${i+1}. ${t}</h3><p>${s}</p></section>`).join('')}<h2>${sumHeading}</h2><section class="report-card">${summary.map(([t,p])=>`<p><strong>${t}：</strong>${p}</p>`).join('')}</section>`;
+$('#view-all').onclick=()=>{cancelAllMotion(true);const show=document.body.classList.toggle('full');$('#full-report').hidden=!show;$('#view-all').setAttribute('aria-pressed',show);$('#view-all').textContent=show?'返回分栏视图':'展开全文';if(!show)requestAnimationFrame(()=>syncIndicator(true));};
+$('#print-report').onclick=()=>{cancelAllMotion(true);window.print();};
+</script>
+</body>
+</html>

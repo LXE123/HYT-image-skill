@@ -1,0 +1,4 @@
+interface:
+  display_name: "商品单图生成"
+  short_description: "基于商品证据生成、检查并审核一张独立商品图片"
+  default_prompt: "使用 $product-single-image-generator 基于现有生图工程生成并审核一张商品图片。"

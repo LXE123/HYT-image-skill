@@ -1,0 +1,36 @@
+{
+  "profile_id": "seven-module-desktop",
+  "reference_scope": "STRUCTURE_ONLY",
+  "delivery": "INDIVIDUAL_IMAGES",
+  "assembly_owner": "DESIGN_TEAM",
+  "canvas": {"width_px": 1464, "height_px": 600},
+  "page_modules": [
+    {"page_module_id": "aplus-hero", "sequence": 1, "display_type": "FULL_BACKGROUND_IMAGE", "content_role": "hero", "sales_task": "Introduce the actual product", "buyer_question": "What is the product and its overall value?", "image_ids": ["a-plus-01"]},
+    {"page_module_id": "aplus-craftsmanship", "sequence": 2, "display_type": "FULL_BACKGROUND_IMAGE", "content_role": "craftsmanship", "sales_task": "Show evidenced construction and finishing", "buyer_question": "How is this product made and finished?", "image_ids": ["a-plus-02"]},
+    {"page_module_id": "aplus-material-details", "sequence": 3, "display_type": "CAROUSEL", "content_role": "material_and_details", "sales_task": "Explain material and signature component details", "buyer_question": "What are the material and component details?", "image_ids": ["a-plus-03", "a-plus-04"]},
+    {"page_module_id": "aplus-lifestyle", "sequence": 4, "display_type": "CAROUSEL", "content_role": "lifestyle", "sales_task": "Show two distinct relevant use contexts", "buyer_question": "How does the actual product fit daily use?", "image_ids": ["a-plus-05", "a-plus-06"]},
+    {"page_module_id": "aplus-range", "sequence": 5, "display_type": "FULL_BACKGROUND_IMAGE", "content_role": "range", "sales_task": "Present registered choices or a supported range story", "buyer_question": "Which evidenced choices are available?", "image_ids": ["a-plus-07"]},
+    {"page_module_id": "aplus-size", "sequence": 6, "display_type": "FULL_BACKGROUND_IMAGE", "content_role": "size_and_fit", "sales_task": "Support a correct size or compatibility choice", "buyer_question": "Which size or version fits?", "image_ids": ["a-plus-08"]},
+    {"page_module_id": "aplus-care", "sequence": 7, "display_type": "FULL_BACKGROUND_IMAGE", "content_role": "care", "sales_task": "Support verified product care guidance", "buyer_question": "How should this actual product be cared for?", "image_ids": ["a-plus-09"]}
+  ],
+  "quantity_policy": {"scope": "PER_CHANNEL", "normal_min": 9, "normal_max": 15, "target": 13},
+  "image_tasks": [
+    {"module_id": "a-plus-01", "sales_task": "Product introduction", "buyer_question": "What is the complete actual product?", "target_view": "brand_hero", "template_id": "product_overview"},
+    {"module_id": "a-plus-02", "sales_task": "Construction and finishing", "buyer_question": "Which visible finishing details are supported?", "target_view": "craftsmanship", "template_id": "hardware_static"},
+    {"module_id": "a-plus-03", "sales_task": "Material surface detail", "buyer_question": "What does the actual material look like?", "target_view": "material_macro", "template_id": "material_macro"},
+    {"module_id": "a-plus-04", "sales_task": "Signature component detail", "buyer_question": "How is this evidenced component constructed?", "target_view": "component_detail", "template_id": "hardware_static"},
+    {"module_id": "a-plus-05", "sales_task": "Primary use context", "buyer_question": "How is the product used in the primary context?", "target_view": "lifestyle_primary", "template_id": "lifestyle_simple"},
+    {"module_id": "a-plus-06", "sales_task": "Secondary use context", "buyer_question": "What distinct second context is relevant?", "target_view": "lifestyle_secondary", "template_id": "lifestyle_simple"},
+    {"module_id": "a-plus-07", "sales_task": "Supported product choices", "buyer_question": "Which registered variants or choices exist?", "target_view": "range", "template_id": "range_story"},
+    {"module_id": "a-plus-08", "sales_task": "Size and compatibility guidance", "buyer_question": "What verified size or compatibility applies?", "target_view": "size_guidance", "template_id": "size_fit"},
+    {"module_id": "a-plus-09", "sales_task": "Care guidance illustration", "buyer_question": "What care guidance has actual evidence?", "target_view": "care", "template_id": "product_overview"}
+  ],
+  "additional_image_tasks": [
+    {"module_id": "a-plus-10", "page_module_id": "aplus-material-details", "sales_task": "Supported material experience", "buyer_question": "Which evidenced material characteristic matters in use?", "target_view": "material_experience", "template_id": "material_macro"},
+    {"module_id": "a-plus-11", "page_module_id": "aplus-use", "sales_task": "Verified adjustment or use sequence", "buyer_question": "How is the actual product adjusted or used?", "target_view": "verified_use", "template_id": "mechanism_steps"},
+    {"module_id": "a-plus-12", "page_module_id": "aplus-lifestyle", "sales_task": "Active lifestyle with recognizable person and environment", "buyer_question": "How does the product fit a relevant active situation?", "target_view": "lifestyle_active", "template_id": "lifestyle_simple"},
+    {"module_id": "a-plus-13", "page_module_id": "aplus-lifestyle", "sales_task": "Everyday lifestyle distinct from the active scene", "buyer_question": "How does the product fit a distinct everyday situation?", "target_view": "lifestyle_everyday", "template_id": "lifestyle_simple"},
+    {"module_id": "a-plus-14", "page_module_id": "aplus-craftsmanship", "sales_task": "Additional non-repeating construction evidence", "buyer_question": "Which second finishing detail supports the product's value?", "target_view": "construction_alternate", "template_id": "hardware_static"},
+    {"module_id": "a-plus-15", "page_module_id": "aplus-lifestyle", "sales_task": "Work or study lifestyle with visible product", "buyer_question": "How does the product fit a relevant work or study context?", "target_view": "lifestyle_work", "template_id": "lifestyle_simple"}
+  ]
+}

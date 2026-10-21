@@ -1,0 +1,32 @@
+# Managed system skills are maintained by Codex.
+/.system/
+
+# Generated packages and product-specific experiments.
+*.zip
+/deliverables/*
+!/deliverables/product-image-skills-uml.mmd
+!/deliverables/product-image-skills-uml.png
+!/deliverables/product-image-skills-validation-*.json
+
+# Local runtime, caches and editor files.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.runtime/
+.venv/
+venv/
+.DS_Store
+*.log
+*.tmp
+.idea/
+.vscode/
+
+# Credentials stay outside version history.
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
