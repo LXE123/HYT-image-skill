@@ -47,6 +47,28 @@ class CodeCropTest(unittest.TestCase):
         self.assertEqual(box[1], 0)
         self.assertLess(box[3], 700)
 
+    def test_matching_ratio_downscales_full_frame_without_distortion(self):
+        image = Image.new('RGB', (2928, 1200), 'black')
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((200, 200, 600, 600), fill='red')
+        draw.rectangle((0, 0, 79, 79), fill='green')
+        draw.rectangle((2848, 1120, 2927, 1199), fill='blue')
+        image.save(self.raw)
+        record = finalize(self.raw, self.out)
+        self.assertEqual(record['crop_box'], [0, 0, 2928, 1200])
+        self.assertFalse(record['upscaled'])
+        with Image.open(self.out) as result:
+            self.assertEqual(result.size, TARGET)
+            self.assertEqual(result.getpixel((5, 5))[:3], (0, 128, 0))
+            self.assertEqual(result.getpixel((1458, 594))[:3], (0, 0, 255))
+            circle = result.getchannel('R').point(lambda value: 255 if value > 127 else 0)
+            left, top, right, bottom = circle.getbbox()
+            # Raster edge coverage may differ by one pixel after filtering.
+            self.assertAlmostEqual(right - left, bottom - top, delta=1)
+            self.assertAlmostEqual(right - left, 200, delta=1)
+            self.assertAlmostEqual(bottom - top, 200, delta=1)
+        self.assertEqual(export_errors(self.root, self.out, self.requirements), [])
+
     def test_missing_or_impossible_keep_region_never_writes_output(self):
         for box in (None, [0,0,1,1], [0,.3,1,.2], [0,0,float('nan'),1]):
             with self.subTest(box=box), self.assertRaises(ValueError):

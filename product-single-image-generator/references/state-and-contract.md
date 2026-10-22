@@ -95,7 +95,12 @@ The image tool produces a retained original, not the final pixel guarantee. A se
 python3 scripts/finalize_a_plus_image.py --source /path/to/product/candidates/inbox/run/image.raw.png --output /path/to/product/candidates/inbox/run/image.png --keep-box 0.05 0.25 0.95 0.75
 ```
 
-Run from the single-image skill directory or use the script's absolute path. `--keep-box LEFT TOP RIGHT BOTTOM` uses 0..1 coordinates in the EXIF-oriented original and encloses ALL required product, people/action and lettering. These sample coordinates are illustrative, not a default. AI first inspects the raw image and determines that region; the code calculates an enclosing crop at the delivery ratio and performs LANCZOS resampling. It rejects a region too large to fit and never stretches or pads. Adjust the composition/regenerate rather than lying about the keep region. Matching ratios can omit the keep region. Small originals require explicit `--allow-upscale`; enlargement is recorded and must pass a sharpness/readability inspection.
+Run from the single-image skill directory or use the script's absolute path. The same script handles both cases; keep the existing `CODE_CROP_RESIZE` contract:
+
+- Matching aspect ratio (1464:600): omit `--keep-box` and resize the full frame proportionally, without cropping. For example, 2928×1200 becomes 1464×600. An already exact-size image keeps its pixels and still receives export provenance in a separate file.
+- Different aspect ratio: inspect the raw image, then supply `--keep-box LEFT TOP RIGHT BOTTOM` in 0..1 coordinates in the EXIF-oriented original, enclosing ALL required product, people/action and lettering. The code calculates an enclosing crop at the delivery ratio and performs proportional LANCZOS resampling. The sample coordinates above are illustrative, not a default. It rejects a region too large to fit; adjust the composition/regenerate rather than omitting important content from the declared region.
+
+Never independently scale width and height to force the target size, or pad. Small originals require explicit `--allow-upscale`; enlargement is recorded. Inspect final-size text, fine lines and texture after either operation: downsampling can lose detail, and enlargement cannot restore missing detail. Exact pixels and preserved proportions do not establish sharpness/readability.
 
 The script requires Pillow (declared in the single-image `requirements.txt`); use the available image runtime. It preserves the raw file and refuses source/output identity or overwriting an existing final. To recrop before registration, choose a new output name; after a candidate/QA has been registered, use the existing revision/replacement rules so recorded hashes stay valid.
 

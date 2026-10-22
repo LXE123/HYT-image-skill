@@ -86,13 +86,13 @@ product-amazon-image-set-generator
 
 当前 A+ 交付约定：
 
-- 最终仅交付 **1464×600 PNG**：每张生成后保留原图，由代码等比裁剪/重采样并校验实际像素，不依赖模型精确控制尺寸；不拉伸、补边或自动增加手机版。
+- 最终仅交付 **1464×600 PNG**：每张生成后保留原图，由代码导出并校验实际像素；同比例直接等比例缩放，异比例裁剪后等比例缩放，不依赖模型精确控制尺寸；不拉伸宽高、补边或自动增加手机版。
 - 完整套图通常每类 13 张，可按内容在 9–15 张调整；明确数量、范围、单图或小样请求优先。
 - 内容组与实际图片数分开计算，七个模块描述不等于七张照片。
 - 只使用当前选定的交付语言，不因资料包含多种语言就自动生成多个版本；指定文案未经授权不翻译或改写。
 - 同图可结合产品细节、文字和图形；每张独立交付，最终 A+ 页面由设计部组装。
 
-A+ 的尺寸转换使用 [finalize_a_plus_image.py](product-single-image-generator/scripts/finalize_a_plus_image.py)，需要 Pillow。先根据生成原图选择包含产品和文案的保留区域，代码裁剪后再检查内容完整与清晰度；具体命令和参数见 [代码导出说明](product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export)。无法保留关键内容时调整构图或重新生成，代码执行不可用时标注导出未完成。
+A+ 的尺寸转换使用 [finalize_a_plus_image.py](product-single-image-generator/scripts/finalize_a_plus_image.py)，需要 Pillow。同比例原图保留完整画面缩放，例如 2928×1200 → 1464×600；异比例时先选择包含产品和文案的保留区域，由代码裁剪并等比例缩放。导出后检查内容完整、细字与纹理清晰度；具体命令和参数见 [代码导出说明](product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export)。无法保留关键内容时调整构图或重新生成，代码执行不可用时标注导出未完成。
 
 ### 3. 只生成一张图片
 
