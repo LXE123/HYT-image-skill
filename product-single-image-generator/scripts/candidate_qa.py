@@ -5,7 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
-from quality_rules import digest, file_at, qa_errors, required_checks
+from quality_rules import digest, file_at, review_binding, review_status, required_checks
 from context_store import load_contract
 from finalize_a_plus_image import export_errors
 
@@ -15,8 +15,13 @@ def main():
     parser.add_argument("package", type=Path)
     parser.add_argument("--contract", required=True)
     parser.add_argument("--report", required=True, help="package-relative QA JSON path")
-    parser.add_argument("--init", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--init", action="store_true")
+    mode.add_argument("--status", action="store_true", help="read saved review validity and next action; never run a visual model")
+    parser.add_argument("--comparison-image", action="append", default=[], help="package-relative image inspected for set continuity; repeat at initialization")
     args = parser.parse_args()
+    if args.comparison_image and not args.init:
+        parser.error("comparison images must be bound when initializing a new report")
     root = args.package.resolve()
     try:
         contract_path = file_at(root, args.contract)
@@ -25,9 +30,6 @@ def main():
         candidate = next((x for x in state.get("candidates", []) if x.get("candidate_id") == contract.get("candidate_id")), None)
         candidate = candidate or {"candidate_id": contract["candidate_id"], "path": contract["output_path"]}
         image_path = file_at(root, candidate["path"])
-        export_failures = export_errors(root, image_path, contract.get("output_requirements", {}))
-        if export_failures:
-            raise ValueError("; ".join(export_failures))
         # Use the same path guard for a not-yet-created report.
         from pathlib import PurePosixPath
         rel = PurePosixPath(args.report)
@@ -38,9 +40,19 @@ def main():
         if args.init:
             if report_path.exists():
                 raise ValueError("report exists; it was not overwritten")
+            export_failures = export_errors(root, image_path, contract.get("output_requirements", {}))
+            if export_failures:
+                raise ValueError("; ".join(export_failures))
+            image_hash = digest(image_path)
+            comparison_images = [{"path": path} for path in args.comparison_image]
             report = {
-                "schema_version": 1, "candidate_id": contract["candidate_id"],
-                "candidate_sha256": digest(image_path), "contract_sha256": digest(contract_path),
+                "schema_version": 2, "candidate_id": contract["candidate_id"],
+                "candidate_sha256": image_hash, "contract_sha256": digest(contract_path),
+                "review_binding": review_binding(root, contract, image_hash, comparison_images), "comparison_images": comparison_images,
+                "composition": {"coordinate_space": "FINAL_IMAGE", "image_sha256": image_hash,
+                                "annotation_method": "", "boundary_certainty": "UNCERTAIN",
+                                "required_content": "NOT_REVIEWED",
+                                "product_regions": [], "copy_regions": [], "protected_regions": []},
                 "inspection_method": "VISUAL_INSPECTION", "reviewer": "",
                 "checks": {key: {"status": "NOT_REVIEWED", "observation": ""} for key in sorted(required_checks(contract))},
                 "unresolved_items": [],
@@ -50,15 +62,11 @@ def main():
             print(f"CREATE  QA draft: {args.report}; inspect pixels before filling observations")
             return 0
         report = json.loads(file_at(root, args.report).read_text())
-        errors = qa_errors(root, contract, contract_path, candidate, report)
+        result = review_status(root, contract, contract_path, candidate, report)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
-    for error in errors:
-        print(f"FAIL  {error}")
-    if errors:
-        return 1
-    print("PASS  recorded visual checks are complete and hashes match; human acceptance remains separate")
-    return 0
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if args.status or result["status"] == "PASS" else 1
 
 
 if __name__ == "__main__":

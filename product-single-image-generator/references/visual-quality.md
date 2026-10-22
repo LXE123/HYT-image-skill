@@ -82,8 +82,47 @@ After the A+ candidate has passed [mandatory code export](state-and-contract.md#
 python3 scripts/candidate_qa.py <package> --contract <relative-contract> --report qa/visual/<candidate-id>.json --init
 ```
 
-This creates a draft with candidate/contract hashes and derived checks. Inspect pixels and fill `reviewer` (identify assistant versus human), each check's `status` and concrete `observation`, and `unresolved_items`. Run the same command without `--init` to validate the record. It validates completeness and hashes only; it does not use computer vision or accept a candidate. Link the report from `candidate.checks.visual.report_path` in `PRODUCT_STATE.json`. Preserve finalized reports; use a new report path for later inspections.
+This creates a schema-2 draft with candidate/contract hashes, review binding, actual-composition fields and derived checks. Inspect pixels and fill `reviewer` (identify assistant versus human), each check's `status` and concrete `observation`, `composition`, and `unresolved_items`. Run the same command without `--init` to validate the record. It checks recorded observations, explicit geometry, hashes and code-export provenance; it does not use an object detector or accept a candidate. Link the report from `candidate.checks.visual.report_path` in `PRODUCT_STATE.json`. Preserve finalized reports; use a new report path for later inspections.
 
 Only a human can accept the candidate. A visual failure cannot be hidden by a human-acceptance status for automatic set completion. For a topology/anatomy/operation failure create a replacement contract and regenerate the affected image from original evidence. Start with a simpler pose if necessary; do not polish a wrong structure. Keep the failed image quarantined. After two attempts with the same structural failure, stop that route and simplify the composition or obtain the missing evidence; do not propagate the failure through the set.
+
+## Actual composition and review reuse
+
+`quality_contract.layout.product_box` / `copy_box` remain target intent. Do not copy them into actual observations without looking at the final image. Record normalized `[left, top, right, bottom]` boxes in 0..1, using the final candidate's coordinates and SHA-256. Raw-image coordinates cannot be reused after cropping. Multiple product parts or text blocks use separate labelled regions.
+
+The draft's `composition` has this shape (example coordinates only):
+
+```json
+{
+  "coordinate_space": "FINAL_IMAGE",
+  "image_sha256": "<current-final-image-sha256>",
+  "annotation_method": "ASSISTANT_VISUAL_ESTIMATE",
+  "boundary_certainty": "CLEAR",
+  "required_content": "COMPLETE",
+  "product_regions": [{"label": "assigned interior detail", "box": [0.40, 0.15, 1.0, 0.90]}],
+  "copy_regions": [{"label": "title and body", "box": [0.02, 0.20, 0.35, 0.80]}],
+  "protected_regions": [{"label": "required adjustment holes", "box": [0.75, 0.35, 0.95, 0.65]}]
+}
+```
+
+`HUMAN_ANNOTATION` requires an actual human annotation; otherwise use `ASSISTANT_VISUAL_ESTIMATE`. Estimated boxes are not precise segmentation, and a claimed confidence number is not proof. Use `boundary_certainty: UNCERTAIN` for ambiguous edges and `required_content: UNCERTAIN` for uncertain completeness; these cannot pass. `INCOMPLETE` fails. Completeness follows `module_role`/`creative_brief`: full product for a full-product task, required detail for a macro, relevant wearing/contact area for lifestyle. Do not require the whole strap in every detail image. Protected regions describe observed critical content; they do not automatically turn the exporter into a composition solver.
+
+Keep product size, hierarchy, balance and sharpness as concrete visual observations in `layout_output` / `design_quality`. Code reports box areas and overlap; it does not turn aesthetic preferences into universal thresholds. Only when the task explicitly requires them, set optional booleans in `quality_contract.layout.review_constraints`: `product_within_target`, `copy_within_target`, `product_clear_of_copy`. The first two enforce containment in the existing target boxes; the last prohibits product overlap with the target `copy_box`. These flags default off; intentional integration/overlap remains allowed. Missing or uncertain annotations require review rather than implying success.
+
+The report's `review_binding` fingerprints the final image, review-rule version, resolved quality/design/copy/product requirements, selected reference bytes and declared comparison images. Initialize with repeated `--comparison-image <relative-image>` flags for actual set peers inspected. Declare them before inspection; changing this context requires a new report, not manually refreshing the old fingerprint. Preserve the current rule version when behavior is unchanged; increment `VISUAL_REVIEW_VERSION` when the review criteria change.
+
+```text
+python3 scripts/candidate_qa.py <package> --contract <relative-contract> --report qa/visual/<candidate-id>.json --status
+```
+
+This read-only query returns `execution`, `status`, `reason`, `next_action`, and errors. `REUSE` means the saved conclusions still apply, not that they are true with certainty: PASS awaits human acceptance, FAIL needs correction/replanning, and REVIEW_REQUIRED needs resolution or human review. `REVIEW` means an incomplete report; `INVALIDATED` means changed dependencies or a legacy report without this binding. Queries never launch generation or a visual model. A status query exits successfully when it returns a disposition; read its status before acting. Normal validation exits unsuccessfully unless the complete current report passes.
+
+Changed image bytes, crop or typesetting require inspecting the new final. Editing text through a generative tool may alter the product too; do not skip identity/structure based only on the requested edit. This first implementation reuses the report as a whole; finer per-check reuse requires proof of which pixels/dependencies stayed unchanged. Local final-file/export checks remain necessary. Historical schema-1 reports retain their old checks and human records; do not downgrade new reports to bypass composition review.
+
+## Real-image benchmark
+
+Keep product-specific benchmark images and annotations outside version control and installation packages. Each case records source/provenance, actual image hash, role/layout, observed regions, expected geometry decision, annotator and whether a human confirmed it. Distinguish original web outputs from deliberately transformed negative cases. Do not label assistant observations as human ground truth or use old PASS labels as new evidence.
+
+The repository's optional real-image regression reads `PRODUCT_COMPOSITION_BENCHMARK=<absolute-benchmark.json>` when running the standard product tests. Without a supplied dataset it explicitly skips that case. The current local WOWSTRAP baseline covers a full-product view, interior detail and two wearing scenes, plus declared mirror/crop negatives and uncertain boundaries. It tests annotation bindings and explicit geometric rules, not automatic detection accuracy, product identity or aesthetics. White-background main images, additional size/placement failures, reflections/hollow structures and human-confirmed annotations remain to be collected. Store the exact tested cases/results before adding constraints based on them.
 
 Legacy accepted outputs remain in history. Resuming generation requires a revised draft with these fields; resuming set completion requires these template/quality fields and a matching visual QA record. For a legacy approved plan missing the fields, create a revised set rather than changing it in place. Do not revoke an existing human decision silently.

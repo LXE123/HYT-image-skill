@@ -2,11 +2,13 @@
 
 import hashlib
 import json
+import math
 from pathlib import PurePosixPath
 from finalize_a_plus_image import export_errors
 
 
 BASE_CHECKS = {"product_identity", "structure_topology", "human_presence", "copy_claims", "layout_output"}
+VISUAL_REVIEW_VERSION = 1
 
 COPY_EXECUTION = (
     "Render supplied image copy verbatim in its given language, preserving spelling, punctuation, numbers and special characters. "
@@ -44,6 +46,94 @@ def design_execution(contract):
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def review_binding(root, contract, image_hash, comparison_images=()):
+    """Fingerprint actual review inputs, not a queue status or the generated prompt."""
+    keys = ("target_view", "generation_template", "quality_contract", "resolved_identity_locks",
+            "required_lock_ids", "visual_invariants", "forbidden_changes", "copy", "image_intent",
+            "module_language", "creative_brief", "visual_system", "design_recipe", "output_requirements",
+            "claim_ids", "claim_decisions", "sellable_object", "identity_lockset_version")
+    refs = [*contract.get("references", []), *contract.get("style_references", []),
+            *contract.get("prior_candidate_references", []), *comparison_images]
+    paths = {ref["path"] for ref in refs}
+    quality = contract.get("quality_contract") or {}
+    for detail in [*quality.get("structure_checks", []), quality.get("mechanism") or {}]:
+        paths.update(detail.get("evidence_paths", []))
+    payload = {"rules_version": VISUAL_REVIEW_VERSION, "candidate_sha256": image_hash,
+               "contract": {key: contract.get(key) for key in keys}, "reference_roles": refs,
+               "reference_bytes": {p: digest(file_at(root, p)) for p in sorted(paths)}}
+    fingerprint = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return {"rules_version": VISUAL_REVIEW_VERSION, "input_fingerprint": fingerprint}
+
+
+def normalized_box(box):
+    return (isinstance(box, list) and len(box) == 4
+            and all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in box)
+            and 0 <= box[0] < box[2] <= 1 and 0 <= box[1] < box[3] <= 1)
+
+
+def composition_result(contract, observed, image_hash):
+    """Check annotations and explicit geometry constraints; never detect objects or grade aesthetics."""
+    uncertain = []
+    failures = []
+    if not isinstance(observed, dict):
+        return {"status": "REVIEW_REQUIRED", "reasons": ["actual composition observations are missing"], "metrics": {}}
+    if observed.get("coordinate_space") != "FINAL_IMAGE" or observed.get("image_sha256") != image_hash:
+        uncertain.append("composition must refer to the current final image hash and FINAL_IMAGE coordinates")
+    if observed.get("annotation_method") not in {"ASSISTANT_VISUAL_ESTIMATE", "HUMAN_ANNOTATION"}:
+        uncertain.append("identify who annotated actual image regions")
+    if observed.get("boundary_certainty") != "CLEAR":
+        uncertain.append("region boundaries are uncertain; visual/human review is required")
+    if observed.get("required_content") == "INCOMPLETE":
+        failures.append("content required by this image task is cut off or missing")
+    elif observed.get("required_content") != "COMPLETE":
+        uncertain.append("inspect completeness of the assigned full product, wearing area or detail")
+    regions = {}
+    for key in ("product_regions", "copy_regions", "protected_regions"):
+        entries = observed.get(key)
+        if not isinstance(entries, list) or any(not isinstance(x, dict) or not isinstance(x.get("label"), str) or not x["label"].strip() or not normalized_box(x.get("box")) for x in entries):
+            uncertain.append(f"{key} needs labelled normalized boxes from the actual image")
+        else:
+            regions[key] = entries
+    if not regions.get("product_regions"):
+        uncertain.append("annotate the product or the assigned product detail, not its target box")
+    def has_text(value):
+        if isinstance(value, str):
+            return bool(value.strip())
+        if isinstance(value, dict):
+            return any(has_text(x) for x in value.values())
+        return isinstance(value, list) and any(has_text(x) for x in value)
+    if has_text(contract.get("copy")) and not regions.get("copy_regions"):
+        uncertain.append("assigned copy needs actual lettering regions")
+    layout = (contract.get("quality_contract") or {}).get("layout") or {}
+    constraints = layout.get("review_constraints") or {}
+    if not isinstance(constraints, dict) or set(constraints) - {"product_within_target", "copy_within_target", "product_clear_of_copy"} or any(not isinstance(v, bool) for v in constraints.values()):
+        uncertain.append("unsupported composition constraints; do not invent universal thresholds")
+        constraints = {}
+    def inside(box, target):
+        return target[0] <= box[0] and target[1] <= box[1] and target[2] >= box[2] and target[3] >= box[3]
+    def overlap(a, b):
+        return max(0, min(a[2], b[2])-max(a[0], b[0])) * max(0, min(a[3], b[3])-max(a[1], b[1]))
+    metrics = {"product_box_areas": [(r["box"][2]-r["box"][0])*(r["box"][3]-r["box"][1]) for r in regions.get("product_regions", [])]}
+    for name, region_key, target_key in (("product_within_target", "product_regions", "product_box"), ("copy_within_target", "copy_regions", "copy_box")):
+        if constraints.get(name):
+            target = layout.get(target_key)
+            if not normalized_box(target):
+                uncertain.append(f"{name} requires an explicit normalized {target_key}")
+            elif any(not inside(r["box"], target) for r in regions.get(region_key, [])):
+                failures.append(f"{region_key} extend outside the explicitly required {target_key}")
+    copy_target = layout.get("copy_box")
+    if normalized_box(copy_target):
+        metrics["product_overlap_with_copy_target"] = [overlap(r["box"], copy_target) for r in regions.get("product_regions", [])]
+    if constraints.get("product_clear_of_copy"):
+        if not normalized_box(copy_target):
+            uncertain.append("product_clear_of_copy requires an explicit copy_box")
+        elif any(metrics["product_overlap_with_copy_target"]):
+            failures.append("product intrudes into the explicitly exclusive copy target")
+    # An uncertain annotation cannot support a deterministic geometric conclusion.
+    return {"status": "REVIEW_REQUIRED" if uncertain else "FAIL" if failures else "PASS",
+            "reasons": uncertain + failures, "metrics": metrics}
 
 
 def file_at(root, value):
@@ -308,12 +398,24 @@ def qa_errors(root, contract, contract_path, candidate, report):
     errors = []
     try:
         actual = digest(file_at(root, candidate.get("path")))
-    except ValueError as exc:
+    except (OSError, ValueError) as exc:
         return [str(exc)]
     errors.extend(export_errors(root, file_at(root, candidate.get("path")), contract.get("output_requirements", {})))
     for key, expected in (("candidate_id", contract.get("candidate_id")), ("candidate_sha256", actual), ("contract_sha256", digest(contract_path))):
         if report.get(key) != expected:
             errors.append(f"QA {key} is stale or mismatched")
+    if report.get("schema_version", 1) not in {1, 2}:
+        errors.append("QA schema_version must be 1 or 2")
+    if report.get("schema_version") == 2:
+        try:
+            expected = review_binding(root, contract, actual, report.get("comparison_images", []))
+            if report.get("review_binding") != expected:
+                errors.append("QA review_binding is stale: image, evidence, review context or rules changed")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            errors.append(f"QA review_binding is invalid: {exc}")
+        composition = composition_result(contract, report.get("composition"), actual)
+        if composition["status"] != "PASS":
+            errors.append(f"QA composition {composition['status']}: " + "; ".join(composition["reasons"]))
     if report.get("inspection_method") != "VISUAL_INSPECTION" or not report.get("reviewer"):
         errors.append("QA needs a named visual reviewer and VISUAL_INSPECTION method")
     checks = report.get("checks", {})
@@ -329,3 +431,38 @@ def qa_errors(root, contract, contract_path, candidate, report):
     if report.get("unresolved_items") != []:
         errors.append("QA has unresolved items or lacks unresolved_items")
     return errors
+
+
+def review_status(root, contract, contract_path, candidate, report):
+    """Read-only disposition of a saved review. No model call or acceptance write."""
+    errors = qa_errors(root, contract, contract_path, candidate, report)
+    invalid = (report.get("schema_version") != 2 or any(
+        error.startswith(("A+ code export:", "missing file:", "unsafe package path:")) or "stale" in error or "review_binding is invalid" in error for error in errors))
+    result = {"execution": "INVALIDATED" if invalid else "REUSE", "status": "REVIEW_REQUIRED",
+              "reason": "REVIEW_INPUTS_CHANGED" if invalid else "UNCHANGED_INPUT",
+              "next_action": "REVIEW_CURRENT_IMAGE", "errors": errors}
+    try:
+        result["composition"] = composition_result(contract, report.get("composition"), digest(file_at(root, candidate.get("path"))))
+    except (OSError, ValueError) as exc:
+        result.update(execution="INVALIDATED", reason="FINAL_FILE_UNAVAILABLE", next_action="RECOVER_EXISTING_OUTPUT")
+        result["errors"] = errors + [str(exc)]
+        return result
+    if invalid:
+        if report.get("schema_version") != 2:
+            result["reason"] = "LEGACY_REPORT_WITHOUT_REVIEW_BINDING"
+        return result
+    checks = report.get("checks", {})
+    if not isinstance(checks, dict):
+        checks = {}
+    complete = all(isinstance(checks.get(key), dict) and checks[key].get("status") in {"PASS", "FAIL", "REVIEW_REQUIRED"}
+                   and isinstance(checks[key].get("observation"), str) and checks[key]["observation"].strip()
+                   for key in required_checks(contract))
+    if not complete:
+        result.update(execution="REVIEW", reason="INCOMPLETE_REPORT", next_action="COMPLETE_CURRENT_REVIEW")
+    elif any(isinstance(check, dict) and check.get("status") == "FAIL" for check in checks.values()) or any(error.startswith("QA composition FAIL:") for error in errors):
+        result.update(status="FAIL", next_action="CORRECT_OR_REPLAN_CURRENT_IMAGE")
+    elif errors:
+        result.update(next_action="RESOLVE_REVIEW_OR_REQUEST_HUMAN")
+    else:
+        result.update(status="PASS", next_action="AWAIT_REAL_HUMAN_DECISION")
+    return result

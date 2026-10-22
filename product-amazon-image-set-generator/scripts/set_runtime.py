@@ -9,7 +9,7 @@ from collections import Counter
 from pathlib import Path
 
 from set_common import SAFE_ID, load_contract, load_json, plan_modules, qa_errors, resolve_file, sha256, write_json
-from quality_rules import focused_prompt, required_checks, validate_quality
+from quality_rules import focused_prompt, required_checks, review_status, validate_quality
 from a_plus_layout import design_handoff, image_membership, layout_summary
 from finalize_a_plus_image import export_errors
 
@@ -161,7 +161,14 @@ def packet(root, plan, state, product, row, phase, max_images):
     else:
         candidate = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), {"path": contract["output_path"]})
         image = resolve_file(root, candidate["path"])
-        failures = export_errors(root, image, contract.get("output_requirements", {}))
+        report_path = candidate.get("checks", {}).get("visual", {}).get("report_path")
+        if report_path:
+            result["review"] = review_status(root, contract, path, candidate, load_json(resolve_file(root, report_path)))
+            result["review"]["report_path"] = report_path
+            failures = [error for error in result["review"]["errors"] if error.startswith("A+ code export:")]
+        else:
+            result["review"] = {"execution": "REVIEW", "status": "NOT_REVIEWED", "reason": "NO_LINKED_REPORT", "next_action": "INSPECT_CURRENT_IMAGE"}
+            failures = export_errors(root, image, contract.get("output_requirements", {}))
         if failures:
             raise ValueError("; ".join(failures))
         result.update({"candidate_path": str(image), "candidate_sha256": sha256(image), "checks": sorted(required_checks(contract)), "expected": {"product_facts": [x["fact"] for x in contract["resolved_identity_locks"]], "quality": contract["quality_contract"], "copy": contract.get("copy", {}), "output": contract["output_requirements"]}})
@@ -261,7 +268,7 @@ def main():
             contract = load_contract(root, path)
             image_relative = args.candidate_path or contract["output_path"]
             image = resolve_file(root, image_relative)
-            if not args.decision.startswith("REJECTED"):
+            if args.decision == "PENDING_REVIEW":
                 failures = export_errors(root, image, contract.get("output_requirements", {}))
                 if failures:
                     raise ValueError("; ".join(failures))

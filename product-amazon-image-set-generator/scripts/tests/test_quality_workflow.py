@@ -179,6 +179,8 @@ class QualityWorkflowTest(unittest.TestCase):
         report["reviewer"] = "synthetic regression fixture (not visual inspection of a real image)"
         for check in report["checks"].values():
             check.update({"status": "PASS", "observation": "synthetic recorded result used to exercise gate"})
+        report["composition"].update({"annotation_method": "ASSISTANT_VISUAL_ESTIMATE", "boundary_certainty": "CLEAR",
+                                      "required_content": "COMPLETE", "product_regions": [{"label": "synthetic product", "box": [.1,.1,.9,.9]}]})
         write_json(report_path, report)
         self.run_script(SINGLE, "candidate_qa.py", "--contract", record["contract_path"], "--report", report_relative)
         state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
@@ -189,6 +191,17 @@ class QualityWorkflowTest(unittest.TestCase):
     def test_acceptance_without_qa_cannot_complete_set(self):
         self.accepted_fixture()
         self.assertEqual(self.sync()["status"], "BLOCKED")
+
+    def test_review_packet_reuses_linked_report_without_writing_or_accepting(self):
+        record, _, _ = self.accepted_fixture()
+        self.attach_passing_report_fixture(record)
+        before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}
+        result = self.run_script(AMAZON, "set_runtime.py", "--set-id", "set1", "packet", "--module-id", "gallery-01", "--phase", "review")
+        packet = json.loads(result.stdout)
+        self.assertEqual(packet['review']['execution'], 'REUSE')
+        self.assertEqual(packet['review']['status'], 'PASS')
+        self.assertEqual(packet['review']['report_path'], 'qa/visual/candidate.json')
+        self.assertEqual(before, {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
 
     def test_complete_report_then_changed_image(self):
         record, contract, candidate = self.accepted_fixture()

@@ -121,6 +121,8 @@ A+ 的尺寸转换使用 [finalize_a_plus_image.py](product-single-image-generat
 
 反馈中提供图片编号或子图 ID，并指出背景、产品结构、文案或排版的具体问题。候选图先保留待审核；脚本校验通过不代表产品结构、视觉效果或人工验收已经通过。
 
+新 QA 报告将目标布局与最终图片的实际区域分开，并记录标注方式与不确定项。恢复时先读取报告有效性：图片、所用证据和规则未变就复用已有结论，已有失败先修正，避免重复视觉检查。构图按当前任务判断，不对特写、完整商品和佩戴场景统一套用主体占比。具体字段、查询命令和真实样图基准说明见 [视觉审核规范](product-single-image-generator/references/visual-quality.md#actual-composition-and-review-reuse)。
+
 ## 工作汇报归档
 
 此技能独立于产品图片工作流。发送日期、时段和真实工作内容即可，例如：

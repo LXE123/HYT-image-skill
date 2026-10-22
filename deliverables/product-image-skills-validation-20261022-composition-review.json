@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-22",
+  "scope": "Observed final-image composition, saved visual-review validity, and first annotated real-image baseline",
+  "source_base_commit": "7dd1cc0ccc8aaeca5e184d664b0d0e5cc228e75b",
+  "regression_tests": {
+    "run": 145,
+    "passed": 145,
+    "failed": 0,
+    "skipped": 0,
+    "real_benchmark_enabled": true
+  },
+  "skill_entry_validation": "2/2 passed",
+  "changed_python_syntax": "passed",
+  "local_markdown_reference_paths_checked": 52,
+  "generation_packet_bytes": {
+    "min": 4901,
+    "max": 4939,
+    "fixture_images": 30
+  },
+  "review_changes": {
+    "qa_schema_version": 2,
+    "rules_version": 1,
+    "target_and_observed_layout_separate": true,
+    "binding_covers_image_contract_reference_claim_and_comparison_inputs": true,
+    "failed_and_uncertain_reviews_reusable_without_passing": true,
+    "duplicate_export_check_removed_from_candidate_qa": true,
+    "new_runtime_state_machine": false
+  },
+  "benchmark": {
+    "manifest_path": "/Users/lxe-3/.codex/skills/deliverables/wowstrap-composition-benchmark-20261022/benchmark.json",
+    "manifest_sha256": "81ce09f52eadb4072e743d005d924b979299ad3502e118af8100a54c362648a8",
+    "retained_user_images": 13,
+    "selected_original_images": 4,
+    "derived_negative_cases": 2,
+    "uncertain_case": 1,
+    "total_cases": 7,
+    "annotation_method": "ASSISTANT_VISUAL_ESTIMATE",
+    "human_verified": false,
+    "archive_status": "STANDARD_ZIP_INDEX_UNREADABLE; 13 PNG LOCAL ENTRIES RECOVERED WITH MATCHING CRC32",
+    "scope": "Tests manually observed regions, explicit layout constraints and known transformations; does not measure automatic object detection, identity fidelity or aesthetic quality.",
+    "uncovered": [
+      "white-background main image",
+      "tiny/oversized full-product negative examples",
+      "reflective or hollow structure boundary ambiguity",
+      "human-confirmed annotations"
+    ]
+  },
+  "visual_generation_tested": false,
+  "automatic_object_detection_tested": false,
+  "human_visual_acceptance": false,
+  "installation_package_rebuilt": false,
+  "source_file_sha256": {
+    "README.md": "70b19ba8a3498c57f73f195307241f69b7a91a739d0be7994c5c56951859849d",
+    "product-single-image-generator/SKILL.md": "3f81b63a6e69ea3e38641b4804cdc8cd32af9d55ad16864f89397d03fed5b9a3",
+    "product-single-image-generator/references/visual-quality.md": "fceb256d4c27f18f55daa47e0be30a6ed7439d9028f514e8c808a620190396d3",
+    "product-single-image-generator/scripts/candidate_qa.py": "1f5bf71ce999ef89dcf8fc024812d4d540893d389e9a8e5ddfd8e476e0191223",
+    "product-single-image-generator/scripts/quality_rules.py": "7002afdf9b2ff24dfaf461671197c2df28b40261252e18bedc8c355e8d23d17c",
+    "product-amazon-image-set-generator/SKILL.md": "dbb3367e4c7499378e7efa62b3efb799e492c3b086f1c07a924aedba1bc9df4f",
+    "product-amazon-image-set-generator/references/browser-testing.md": "d2126ec12285f74a03dcc443919da40f0fd6f76320eb0e5f10285372875b136b",
+    "product-amazon-image-set-generator/references/state-handoff.md": "59bb1362268904c0d6e5fcd720dfdfefe89fd680c33c38faa319b9d80efc4224",
+    "product-amazon-image-set-generator/scripts/set_runtime.py": "90b690e8210db87a6f8cf61c2cd169f12d9e1984d8f3428fbe7f907542d4ef52",
+    "product-amazon-image-set-generator/scripts/tests/test_quality_workflow.py": "82ba8a15980bdb22be7bcbb1f03d1dda7761cd4a897232fc9c88d8c64625b4a2",
+    "product-amazon-image-set-generator/scripts/tests/test_review_reuse.py": "609560cfd317fa8a46c86ec61b7dd4c8dd43bbe3f26dbff6c88df0dc521de154"
+  }
+}

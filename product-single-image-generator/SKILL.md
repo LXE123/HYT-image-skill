@@ -47,7 +47,9 @@ Read [visual quality](references/visual-quality.md) when establishing inspection
 python3 scripts/candidate_qa.py <package> --contract <relative-contract> --report qa/visual/<candidate>.json --init
 ```
 
-Fill actual observations, then validate without `--init`. Scripts verify report completeness/file identity, not pixels. Link QA through the runtime for set work. Keep candidates pending human review and continue other authorized tasks. Only real user/designated-reviewer feedback can record acceptance.
+New QA drafts bind review inputs and record observed final-image regions separately from target layout; annotate the assigned complete product, wearing area or detail, exact lettering, and uncertainty. Follow [actual composition and reuse](references/visual-quality.md#actual-composition-and-review-reuse). Scripts check bindings and explicit geometry on these annotations; they do not detect objects or establish aesthetics. Uncertain boundaries require review, never a default pass.
+
+Before repeating visual inspection, query the saved report with the same command plus `--status`. Reuse valid observations for unchanged images/evidence/rules; an unchanged failure needs correction/replanning, not another identical inspection. After any image edit or crop, check the new final image. Link QA through the runtime for set work. Keep candidates pending human review and continue other authorized tasks. Only real user/designated-reviewer feedback can record acceptance.
 
 ## Correct the affected task
 

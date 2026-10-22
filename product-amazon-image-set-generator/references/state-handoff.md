@@ -42,6 +42,14 @@ python3 scripts/set_runtime.py <package> --set-id <set> packet --module-id <id> 
 
 Create/complete the single-image QA report with `candidate_qa.py`. Do not append the full report to the generation prompt. Record rejection using a short failure category:
 
+For new reports, initialization writes schema 2: candidate/contract hashes, review-input fingerprint and observed final-image regions. Target regions remain in `quality_contract.layout`. Query a saved report with `candidate_qa.py ... --status`; a review packet also returns a `review` disposition when the candidate links a report. This is a deterministic validity check, never a model call. `REUSE/PASS` means reuse those observations and await the real human decision; `REUSE/FAIL` means correct/replan, not re-inspect unchanged bytes; uncertainty requires resolving the boundary or human review. Incomplete reports need completion. `INVALIDATED` explains that image, reviewed evidence/context, contract or rule version changed; create a new report and inspect the affected candidate. Do not edit a binding merely to make a stale report pass. Legacy reports remain historical; they lack the new reuse binding.
+
+Use `--comparison-image <package-relative-path>` at report initialization for actual peer images inspected for set continuity. Their bytes participate in validity. A newly added comparison or a changed peer needs a fresh report for that comparison. Progress queries and switching to another child never authorize image regeneration or another visual inspection. Local integrity checks remain active, including final export provenance; this is saved visual-result reuse, not a new persistent cache of every static validation.
+
+After finishing a report, link it using the existing record command: `set_runtime.py <package> --set-id <set> record --module-id <id> --decision PENDING_REVIEW --report qa/visual/<candidate>.json`. This preserves pending human review and makes the report path/disposition available to later review packets. For a failure, record the appropriate rejection with the same report instead. An unlinked report is not discovered by scanning unrelated QA files; query its known path directly until linked.
+
+The same invalidated/failed input without any corrective change is not progress: retain the result and proceed to its stated next action. Preserve the existing blocked/retry states rather than adding a second phase machine. After an interrupted tool call, reconcile the job/result and both raw/final paths before attempting generation again.
+
 ```text
 python3 scripts/set_runtime.py <package> --set-id <set> record --module-id <id> --decision REJECTED_TOPOLOGY --failure-code HARDWARE_STATE --report qa/visual/<candidate>.json
 python3 scripts/set_runtime.py <package> --set-id <set> prepare --module-id <id> --retry --correction "Preserve the original connector count and routing"
