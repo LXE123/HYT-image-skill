@@ -21,7 +21,7 @@
     "relationships": 11,
     "new_runtime_entities": 0
   },
-  "package": "/Users/lxe-3/.codex/skills/product-image-skills.zip",
+  "package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
   "package_sha256": "a4b9bbd915dda52365ae48d3c4a68db7715aa777c43781ce66224cc195300b28",
   "size_bytes": 182492,
   "skill_file_counts": {

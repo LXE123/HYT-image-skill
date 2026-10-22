@@ -3,6 +3,8 @@
 
 # Generated packages and product-specific experiments.
 *.zip
+/dist/*
+!/dist/.gitkeep
 /deliverables/*
 !/deliverables/product-image-skills-uml.mmd
 !/deliverables/product-image-skills-uml.png
