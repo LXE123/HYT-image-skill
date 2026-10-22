@@ -272,6 +272,28 @@ class QualityWorkflowTest(unittest.TestCase):
                 self.assertIn("One motivated side-light", prompt)
                 self.assertIn("Art direction:", prompt)
 
+    def test_a_plus_canvas_precedes_creative_rules_in_both_prompt_formats(self):
+        from quality_rules import compile_prompt
+        contract = self.human_module()
+        contract.update({"target_view": "lifestyle", "references": self.module["product_references"],
+                         "output_requirements": {"format": "PNG", "width_px": 1464, "height_px": 600,
+                                                 "aspect_ratio": "1464:600", "postprocess": "CODE_CROP_RESIZE"}})
+        a_plus_output = dict(contract["output_requirements"])
+        for fmt in (None, "focused-v1"):
+            contract["output_requirements"] = dict(a_plus_output)
+            for template_id in ("lifestyle", "main_product"):
+                with self.subTest(prompt_format=fmt, template=template_id):
+                    contract["prompt_format"] = fmt
+                    contract["generation_template"]["template_id"] = template_id
+                    prompt = compile_prompt(contract)
+                    canvas = prompt.splitlines()[0]
+                    self.assertIn("2.44:1", canvas)
+                    self.assertIn("1464:600", canvas)
+                    self.assertLess(prompt.index(canvas), prompt.index("Template"))
+                    self.assertIn(contract["creative_brief"]["visual_device"], prompt)
+            contract["output_requirements"] = {"format": "PNG", "aspect_ratio": "1:1"}
+            self.assertNotIn("Canvas: 2.44:1", compile_prompt(contract))
+
     def test_corrupted_prompt_is_blocked_at_preflight(self):
         record = self.prepare_approved_set()
         path = self.root / record["contract_path"]

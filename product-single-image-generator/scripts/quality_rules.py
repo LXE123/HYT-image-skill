@@ -24,6 +24,12 @@ DESIGN_EXECUTION = (
 )
 
 
+def canvas_rules(contract):
+    if (contract.get("output_requirements") or {}).get("postprocess") == "CODE_CROP_RESIZE":
+        return ["Canvas: 2.44:1 (1464:600) landscape; override reference/style framing, keep all content crop-safe. Code finalizes pixels."]
+    return []
+
+
 def design_execution(contract):
     if (contract.get("generation_template") or {}).get("template_id") == "main_product":
         return []
@@ -33,8 +39,6 @@ def design_execution(contract):
             "Set continuity: local briefs, catalog styles and references refine visual_system within its background lightness/colour, "
             "white balance, contrast/shadows and type-family range. Keep product colours; vary composition, scene and surfaces within that range."
         )
-    if (contract.get("output_requirements") or {}).get("postprocess") == "CODE_CROP_RESIZE":
-        rules.append("Keep required product, people/action and lettering in a wide crop-safe band for 1464x600 delivery; native output is finalized by code.")
     return rules
 
 
@@ -243,6 +247,7 @@ def compile_prompt(contract):
     if contract.get("prompt_format") == "focused-v1":
         return focused_prompt(contract)
     return "\n\n".join([
+        *canvas_rules(contract),
         "Generate one independent product image. Never invent unseen parts or a mechanism.",
         COPY_EXECUTION,
         "Template rules: " + json.dumps(contract["generation_template"], ensure_ascii=False),
@@ -266,6 +271,7 @@ def focused_prompt(contract):
     """Generation facts only. Review history, QA bookkeeping and hashes stay on disk."""
     quality = contract["quality_contract"]
     sections = [
+        *canvas_rules(contract),
         "Create one independent product image. Follow product evidence for identity; style and pose references cannot change structure.",
         "Added lettering may contain only Exact copy; actual product markings follow source. Never print catalog IDs, style names or instruction labels.",
         COPY_EXECUTION,

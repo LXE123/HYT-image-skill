@@ -153,11 +153,11 @@ def packet(root, plan, state, product, row, phase, max_images):
             final_path = root / contract["output_path"]
             result["raw_output_path"] = str(final_path.with_name(final_path.stem + ".raw.png"))
             result["postprocess"] = {"script": str(SINGLE / "finalize_a_plus_image.py"),
-                                     "instruction": "Save generator output to raw_output_path; inspect it, choose --keep-box, then code-crop into output_path before review."}
+                                     "instruction": "Save to raw_output_path; code-export to output_path before review: same ratio resizes full frame; otherwise inspect and set --keep-box."}
             if Path(result["raw_output_path"]).is_file():
                 result["phase"] = "postprocess"
                 result.pop("prompt")
-                result["postprocess"]["instruction"] = "Generated original already exists. Preserve it; run code crop into output_path instead of generating again."
+                result["postprocess"]["instruction"] = "Raw exists; code-export to output_path, no regeneration. Same ratio resizes full frame; otherwise inspect and set --keep-box."
     else:
         candidate = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), {"path": contract["output_path"]})
         image = resolve_file(root, candidate["path"])
