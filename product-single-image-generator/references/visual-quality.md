@@ -62,7 +62,7 @@ Always inspect `product_identity`, `structure_topology`, `human_presence`, `copy
 - `hardware_state`: compare a full-resolution candidate crop directly with the cited original detail. Check component count, opening profile, attachment side, inside/outside faces, holes/slots, fastening surfaces, threading/routing and closed/open state. Do not judge by colour or general resemblance alone.
 - `mechanism_motion`: compare each depicted state and every arrow/caption to the evidenced operation. Reject an invented hinge, lift, split, release direction or floating component.
 - `copy_claims`: inspect actual rendered wording, spelling and arrows, including synonyms of unsupported claims. The script's text checks cannot establish semantic claim safety.
-- `layout_output`: check actual pixel dimensions (A+: only 1464×600), aspect ratio, product completeness, separation from copy, legibility at intended display size, and any required background. Inspect the original output, not a UI thumbnail or screenshot alone.
+- `layout_output`: inspect the code-exported final, its crop and readability; check actual pixel dimensions (A+: mandatory code crop/resample to 1464×600 PNG), aspect ratio, product completeness, separation from copy, legibility at intended display size, and any required background. Inspect the original output, not a UI thumbnail or screenshot alone.
 
 Save useful annotated crops or side-by-side comparisons under `qa/visual/`; they support inspection but do not become product evidence. Use `FAIL` for a visible error, `REVIEW_REQUIRED` for ambiguity, and `NOT_REVIEWED` before inspection. Do not invent observations or turn a schema/geometry pass into a visual pass.
 
@@ -76,7 +76,7 @@ Save useful annotated crops or side-by-side comparisons under `qa/visual/`; they
 
 ## Recorded review gate
 
-After the candidate exists:
+After the A+ candidate has passed [mandatory code export](state-and-contract.md#mandatory-a-code-export), or the non-A+ candidate exists:
 
 ```text
 python3 scripts/candidate_qa.py <package> --contract <relative-contract> --report qa/visual/<candidate-id>.json --init

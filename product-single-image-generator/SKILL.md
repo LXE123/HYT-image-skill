@@ -31,6 +31,12 @@ Make the chosen visual relationship, light, space and type treatment visible in 
 
 Separate assigned visual facts from exact copy. A copy-only selling point does not require an effect, action or visual proof. Combine naturally related points where supported, let other points remain typographic, and choose integrated generation or separate typesetting for legibility. Reuse [art direction](references/art-direction.md) for this decision. For A+ output, deliver only 1464×600 and verify actual pixels; do not add mobile or unrequested language variants.
 
+## Code crop before A+ review
+
+A+ delivery always runs [finalize_a_plus_image.py](scripts/finalize_a_plus_image.py); a pixel-size prompt is not the export step. Preserve the generated original separately, inspect it and use code to crop/resample to 1464×600 PNG without stretching or padding. For set work, save to the packet's `raw_output_path`, then export to `output_path`; an existing raw image resumes postprocessing instead of regeneration. Read [code export](references/state-and-contract.md#mandatory-a-code-export) for the command, retained provenance and keep-region rule. Standalone A+ initialization uses `--a-plus`.
+
+For mismatched ratios, AI identifies a normalized `--keep-box` containing all required product, person/action and lettering in the original. The script finds a crop retaining that region; it refuses a region that cannot fit. Do not blindly center-crop or omit important content to make the command pass. Recompose/regenerate if needed; explicit `--allow-upscale` permits enlargement with sharpness review. Even an already exact-size original passes through the script into a separate final file. If code execution/Pillow is unavailable, report the unfinished export rather than claiming a compliant deliverable.
+
 ## Inspect and record
 
 Read [visual quality](references/visual-quality.md) when establishing inspection criteria or resolving an unclear check; reuse the current review packet's applicable checks afterward. The complete guide and example remain available for new risks and record editing. Inspect full-resolution pixels against original evidence. Check identity/topology, people, copy and actual canvas; add anatomy/contact, visible-hardware state and motion checks when relevant. Review `content_coverage`, `module_role_fit` and `design_quality` when required. Correct texture alone does not prove that the image answers its buyer question or realizes its design.

@@ -11,6 +11,7 @@ from pathlib import Path
 from set_common import SAFE_ID, load_contract, load_json, plan_modules, qa_errors, resolve_file, sha256, write_json
 from quality_rules import focused_prompt, required_checks, validate_quality
 from a_plus_layout import design_handoff, image_membership, layout_summary
+from finalize_a_plus_image import export_errors
 
 SCRIPTS = Path(__file__).resolve().parent
 SINGLE = SCRIPTS.parents[1] / "product-single-image-generator" / "scripts"
@@ -148,9 +149,21 @@ def packet(root, plan, state, product, row, phase, max_images):
         if row["status"] in {"ACCEPTED", "REJECTED", "REVIEW_REQUIRED", "BLOCKED"}:
             raise ValueError("current candidate cannot be generated again; review it or prepare an explicit retry")
         result.update({"output_path": str(root / contract["output_path"]), "prompt": focused_prompt(contract)})
+        if contract["output_requirements"].get("postprocess") == "CODE_CROP_RESIZE":
+            final_path = root / contract["output_path"]
+            result["raw_output_path"] = str(final_path.with_name(final_path.stem + ".raw.png"))
+            result["postprocess"] = {"script": str(SINGLE / "finalize_a_plus_image.py"),
+                                     "instruction": "Save generator output to raw_output_path; inspect it, choose --keep-box, then code-crop into output_path before review."}
+            if Path(result["raw_output_path"]).is_file():
+                result["phase"] = "postprocess"
+                result.pop("prompt")
+                result["postprocess"]["instruction"] = "Generated original already exists. Preserve it; run code crop into output_path instead of generating again."
     else:
         candidate = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), {"path": contract["output_path"]})
         image = resolve_file(root, candidate["path"])
+        failures = export_errors(root, image, contract.get("output_requirements", {}))
+        if failures:
+            raise ValueError("; ".join(failures))
         result.update({"candidate_path": str(image), "candidate_sha256": sha256(image), "checks": sorted(required_checks(contract)), "expected": {"product_facts": [x["fact"] for x in contract["resolved_identity_locks"]], "quality": contract["quality_contract"], "copy": contract.get("copy", {}), "output": contract["output_requirements"]}})
         if contract.get("image_intent"):
             result["expected"]["image_intent"] = contract["image_intent"]
@@ -248,6 +261,10 @@ def main():
             contract = load_contract(root, path)
             image_relative = args.candidate_path or contract["output_path"]
             image = resolve_file(root, image_relative)
+            if not args.decision.startswith("REJECTED"):
+                failures = export_errors(root, image, contract.get("output_requirements", {}))
+                if failures:
+                    raise ValueError("; ".join(failures))
             previous = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), None)
             if previous and previous.get("sha256") != sha256(image):
                 raise ValueError("candidate ID already belongs to different image bytes")

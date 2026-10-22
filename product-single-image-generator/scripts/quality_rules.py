@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import PurePosixPath
+from finalize_a_plus_image import export_errors
 
 
 BASE_CHECKS = {"product_identity", "structure_topology", "human_presence", "copy_claims", "layout_output"}
@@ -32,6 +33,8 @@ def design_execution(contract):
             "Set continuity: local briefs, catalog styles and references refine visual_system within its background lightness/colour, "
             "white balance, contrast/shadows and type-family range. Keep product colours; vary composition, scene and surfaces within that range."
         )
+    if (contract.get("output_requirements") or {}).get("postprocess") == "CODE_CROP_RESIZE":
+        rules.append("Keep required product, people/action and lettering in a wide crop-safe band for 1464x600 delivery; native output is finalized by code.")
     return rules
 
 
@@ -92,6 +95,9 @@ def required_checks(contract):
 
 def validate_quality(root, contract, index, locks):
     errors = []
+    output = contract.get("output_requirements", {})
+    if isinstance(output, dict) and output.get("postprocess") == "CODE_CROP_RESIZE" and (output.get("width_px"), output.get("height_px"), output.get("format")) != (1464, 600, "PNG"):
+        errors.append("code-cropped A+ output requires PNG at exactly 1464x600")
     if contract.get("module_language_policy_version") == 1:
         language = contract.get("module_language")
         if not isinstance(language, dict) or any(not isinstance(language.get(k), str) or not language[k].strip() for k in ("image_task_id", "role", "sales_task", "buyer_question", "visual_language")) or not texts(language.get("must_show")) or not texts(language.get("not_a_substitute")):
@@ -298,6 +304,7 @@ def qa_errors(root, contract, contract_path, candidate, report):
         actual = digest(file_at(root, candidate.get("path")))
     except ValueError as exc:
         return [str(exc)]
+    errors.extend(export_errors(root, file_at(root, candidate.get("path")), contract.get("output_requirements", {})))
     for key, expected in (("candidate_id", contract.get("candidate_id")), ("candidate_sha256", actual), ("contract_sha256", digest(contract_path))):
         if report.get(key) != expected:
             errors.append(f"QA {key} is stale or mismatched")

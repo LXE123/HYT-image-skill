@@ -14,6 +14,8 @@ from a_plus_layout import design_handoff, image_membership, layout_errors, layou
 from set_common import default_modules, generation_mode_errors, load_json, plan_modules, sha256, store_module_spec, write_json
 from context_store import load_contract
 from quality_rules import qa_errors, required_checks
+from finalize_a_plus_image import finalize, export_errors
+from PIL import Image
 
 
 class APlusLayoutTest(unittest.TestCase):
@@ -45,6 +47,13 @@ class APlusLayoutTest(unittest.TestCase):
         result = subprocess.run([sys.executable, "-B", str(SCRIPTS / name), str(self.root), *args], capture_output=True, text=True)
         self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
         return result
+
+    def write_final_candidate(self, packet):
+        raw = Path(packet['raw_output_path'])
+        raw.parent.mkdir(parents=True, exist_ok=True)
+        if not raw.exists():
+            Image.new('RGB', (1536, 1024), '#c9b7a1').save(raw)
+        finalize(raw, Path(packet['output_path']), [0.05, 0.25, 0.95, 0.75])
 
     def initialize(self, count=9):
         self.run_script("init_visual_set.py", "--set-id", "aplus", "--deliverable", "a-plus", "--count", str(count))
@@ -479,7 +488,7 @@ class APlusLayoutTest(unittest.TestCase):
         path = self.root / packet["contract_path"]
         contract = load_contract(self.root, path)
         image = Path(packet["output_path"])
-        image.write_bytes(b"synthetic image used only to exercise QA record checks")
+        self.write_final_candidate(packet)
         candidate = {"candidate_id": packet["candidate_id"], "path": contract["output_path"]}
         report = {"candidate_id": packet["candidate_id"], "candidate_sha256": sha256(image), "contract_sha256": sha256(path),
                   "inspection_method": "VISUAL_INSPECTION", "reviewer": "synthetic fixture", "unresolved_items": [],
@@ -557,7 +566,7 @@ class APlusLayoutTest(unittest.TestCase):
         self.fill_for_approval(plan)
         self.run_script("validate_set_plan.py", "--set-id", "aplus", "--approve")
         first = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "prepare").stdout)
-        Path(first["output_path"]).write_bytes(b"synthetic generated candidate, no visual assertion")
+        self.write_final_candidate(first)
         self.run_script("set_runtime.py", "--set-id", "aplus", "record", "--module-id", "a-plus-01", "--decision", "PENDING_REVIEW")
         review = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "next").stdout)
         self.assertEqual(review["current"]["module_id"], "a-plus-01")
@@ -577,7 +586,7 @@ class APlusLayoutTest(unittest.TestCase):
         self.fill_for_approval(plan)
         self.run_script("validate_set_plan.py", "--set-id", "aplus", "--approve")
         packet = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "prepare", "--module-id", "a-plus-03").stdout)
-        Path(packet["output_path"]).write_bytes(b"synthetic material candidate")
+        self.write_final_candidate(packet)
         reviewed = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "packet", "--module-id", "a-plus-03", "--phase", "review").stdout)
         self.assertEqual(reviewed["expected"]["module_language"]["role"], "material")
         self.assertIn("module_role_fit", reviewed["checks"])
@@ -717,7 +726,7 @@ class APlusLayoutTest(unittest.TestCase):
         self.assertEqual(recipe["mode"], "adaptive")
         self.assertEqual(recipe["reference_influences"][0]["strength"], "low")
         self.assertNotIn("style_id", recipe["style"])
-        Path(packet["output_path"]).write_bytes(b"synthetic candidate; no visual quality assertion")
+        self.write_final_candidate(packet)
         reviewed = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "packet", "--phase", "review").stdout)
         self.assertEqual(reviewed["expected"]["design_recipe"], recipe)
 
@@ -760,7 +769,7 @@ class APlusLayoutTest(unittest.TestCase):
             contract = load_contract(self.root, self.root / packet['contract_path'])
             self.assertEqual(contract['design_recipe']['style']['task_adjustments'], {'background': surface})
             self.assertNotEqual(contract['generation_template']['template_id'], 'main_product')
-            Path(packet['output_path']).write_bytes(b'Synthetic image: no actual visual consistency assertion')
+            self.write_final_candidate(packet)
             reviewed = json.loads(self.run_script('set_runtime.py', '--set-id', 'aplus', 'packet', '--phase', 'review', '--module-id', image_id).stdout)
             self.assertEqual(reviewed['expected']['visual_system'], plan['visual_system'])
             self.assertIn('design_quality', reviewed['checks'])
@@ -771,6 +780,34 @@ class APlusLayoutTest(unittest.TestCase):
         result = self.run_script("configure_design.py", "--set-id", "main", "select", "--module-id", "gallery-01",
                                  "--layout-id", "adaptive", "--story-stage", "single_message", success=False)
         self.assertIn("require main_clean", result.stderr)
+
+    def test_raw_or_unprocessed_a_plus_cannot_enter_review_even_with_a_pass_label(self):
+        plan = self.initialize()
+        self.fill_for_approval(plan)
+        self.run_script('validate_set_plan.py', '--set-id', 'aplus', '--approve')
+        packet = json.loads(self.run_script('set_runtime.py', '--set-id', 'aplus', 'prepare').stdout)
+        self.assertNotEqual(packet['raw_output_path'], packet['output_path'])
+        image = Path(packet['output_path'])
+        Image.new('RGB', (1536,1024), 'white').save(image)
+        self.run_script('set_runtime.py', '--set-id', 'aplus', 'record', '--module-id', 'a-plus-01', '--decision', 'PENDING_REVIEW', success=False)
+        self.run_script('set_runtime.py', '--set-id', 'aplus', 'packet', '--phase', 'review', success=False)
+        Image.new('RGB', (1464,600), 'white').save(image)
+        contract_path = self.root / packet['contract_path']
+        contract = load_contract(self.root, contract_path)
+        candidate = {'path': contract['output_path']}
+        report = {'candidate_id': packet['candidate_id'], 'candidate_sha256': sha256(image), 'contract_sha256': sha256(contract_path),
+                  'reviewer': 'synthetic fixture', 'inspection_method': 'VISUAL_INSPECTION', 'unresolved_items': [],
+                  'checks': {key: {'status':'PASS','observation':'synthetic report'} for key in required_checks(contract)}}
+        self.assertTrue(any('provenance' in e for e in qa_errors(self.root, contract, contract_path, candidate, report)))
+        image.unlink()
+        raw = Path(packet['raw_output_path'])
+        Image.new('RGB', (1536,1024), 'white').save(raw)
+        resumed = json.loads(self.run_script('set_runtime.py', '--set-id', 'aplus', 'prepare').stdout)
+        self.assertEqual(resumed['phase'], 'postprocess')
+        self.assertNotIn('prompt', resumed)
+        self.write_final_candidate(packet)
+        self.run_script('set_runtime.py', '--set-id', 'aplus', 'record', '--module-id', 'a-plus-01', '--decision', 'PENDING_REVIEW')
+        self.run_script('set_runtime.py', '--set-id', 'aplus', 'packet', '--phase', 'review')
 
 
 if __name__ == "__main__":

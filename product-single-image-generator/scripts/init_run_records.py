@@ -31,7 +31,10 @@ def main() -> int:
     parser.add_argument("--view", required=True)
     parser.add_argument("--format", default="PNG")
     parser.add_argument("--background", default="white")
+    parser.add_argument("--a-plus", action="store_true", help="A+ final PNG requires code crop to 1464x600")
     args = parser.parse_args()
+    if args.a_plus:
+        args.format = "PNG"
 
     if not SAFE_ID.fullmatch(args.run_id) or not SAFE_ID.fullmatch(args.view):
         parser.error("run-id 和 view 只能使用字母、数字、点、下划线和连字符")
@@ -71,6 +74,8 @@ def main() -> int:
             contract = read_json(contract_path)
         except (OSError, json.JSONDecodeError, ValueError) as exc:
             parser.error(f"无法读取已有合同：{exc}")
+        if args.a_plus and contract.get("output_requirements", {}).get("postprocess") != "CODE_CROP_RESIZE":
+            parser.error("existing contract has no A+ code export; create a new run/revision instead of overwriting it")
         candidate_id = contract.get("candidate_id") or candidate_id
         relative_candidate = contract.get("output_path") or relative_candidate
         print(f"SKIP  合同已存在，未覆盖：{relative_contract}")
@@ -109,6 +114,8 @@ def main() -> int:
             "output_requirements": {"format": args.format, "background": args.background},
             "output_path": relative_candidate,
         }
+        if args.a_plus:
+            contract["output_requirements"].update(width_px=1464, height_px=600, aspect_ratio="1464:600", postprocess="CODE_CROP_RESIZE")
         write_json(contract_path, contract)
         print(f"CREATE  合同草稿：{relative_contract}")
 

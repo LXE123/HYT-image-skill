@@ -7,6 +7,7 @@ from pathlib import Path
 
 from quality_rules import digest, file_at, qa_errors, required_checks
 from context_store import load_contract
+from finalize_a_plus_image import export_errors
 
 
 def main():
@@ -24,6 +25,9 @@ def main():
         candidate = next((x for x in state.get("candidates", []) if x.get("candidate_id") == contract.get("candidate_id")), None)
         candidate = candidate or {"candidate_id": contract["candidate_id"], "path": contract["output_path"]}
         image_path = file_at(root, candidate["path"])
+        export_failures = export_errors(root, image_path, contract.get("output_requirements", {}))
+        if export_failures:
+            raise ValueError("; ".join(export_failures))
         # Use the same path guard for a not-yet-created report.
         from pathlib import PurePosixPath
         rel = PurePosixPath(args.report)

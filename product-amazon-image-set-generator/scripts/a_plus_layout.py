@@ -55,6 +55,8 @@ def layout_errors(plan, modules):
         if image.get("channel") != "PREMIUM_A_PLUS":
             continue
         output = image.get("output_requirements") or {}
+        if isinstance(output, dict) and plan.get("schema_version", 2) >= 2 and (output.get("postprocess") != "CODE_CROP_RESIZE" or output.get("format") != "PNG"):
+            errors.append(f"A+ image {image.get('module_id')} requires PNG with CODE_CROP_RESIZE")
         if not isinstance(output, dict) or any(not positive_int(output.get(k)) or output[k] != value for k, value in (("width_px", 1464), ("height_px", 600))):
             errors.append(f"A+ image {image.get('module_id')} requires only 1464x600")
             continue

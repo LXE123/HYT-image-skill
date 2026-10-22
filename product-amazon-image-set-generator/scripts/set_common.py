@@ -240,5 +240,6 @@ def module_stub(module_id: str, channel: str, sequence: int, task: str, question
         "visual_invariants": [],
         "forbidden_changes": [],
         "copy": {"title": "", "subtitle": "", "labels": []},
-        "output_requirements": {"format": "PNG", "aspect_ratio": ratio, "background": background},
+        "output_requirements": {"format": "PNG", "aspect_ratio": ratio, "background": background,
+                                **({"postprocess": "CODE_CROP_RESIZE"} if channel == "PREMIUM_A_PLUS" else {})},
     }

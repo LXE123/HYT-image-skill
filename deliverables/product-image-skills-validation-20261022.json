@@ -1,0 +1,34 @@
+{
+  "version": "0.1.14",
+  "date": "2026-10-22",
+  "regression_tests": {
+    "passed": 125,
+    "failed": 0
+  },
+  "skill_validation": "3/3 passed",
+  "syntax_json_reference_checks": "passed",
+  "package_source_parity": "passed",
+  "zip_crc_and_sha256": "passed",
+  "visual_generation_tested": false,
+  "code_crop_pixel_tests_passed": 12,
+  "code_crop_and_review_gate": "passed",
+  "style_rules_generation_and_review_handoff": "passed",
+  "scale_fixture_packet_budget_bytes": 5000,
+  "scale_fixture_packet_bytes": {
+    "min": 4901,
+    "max": 4939
+  },
+  "uml": {
+    "classes": 9,
+    "relationships": 11,
+    "new_runtime_entities": 0
+  },
+  "package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "package_sha256": "53ad6ecf729b0464280e84666e87c34f37069a0cbcbd420395755b610a6fc069",
+  "size_bytes": 189836,
+  "skill_file_counts": {
+    "product-image-project-builder": 19,
+    "product-single-image-generator": 17,
+    "product-amazon-image-set-generator": 27
+  }
+}

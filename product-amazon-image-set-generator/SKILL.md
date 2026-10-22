@@ -15,7 +15,7 @@ Use the user's instruction or saved scope: Gallery, A+, or both. Ask once only i
 
 Normally plan 13 images per selected channel, adapting within 9–15 for meaningful coverage. Explicit counts/ranges take precedence; both normally means 13+13. Expanded mode (30–40 per channel, fallback 36) requires an explicit large-production request. New defaults never expand a saved queue.
 
-For this department, A+ delivers only 1464×600; Gallery uses its own canvas (square by default). Archive older/mobile canvas requirements without producing extra versions. Select the current delivery language from the task/market; archived translations do not request additional outputs. Deliver independent files for design-team assembly. Each may contain related panels, copy, graphics, comparisons or steps serving its assigned task.
+For this department, A+ delivers only a code-cropped 1464×600 PNG. Generate a suitable wide composition, retain the original and run the single-image [code export](../product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export) before review; model-native pixels are not trusted as final dimensions. Preserve required content with a selected keep region, without stretching or padding. Gallery uses its own canvas (square by default). Archive older/mobile canvas requirements without producing extra versions. Select the current delivery language from the task/market; archived translations do not request additional outputs. Deliver independent files for design-team assembly. Each may contain related panels, copy, graphics, comparisons or steps serving its assigned task.
 
 ## 2. Turn responsibilities into an image plan
 

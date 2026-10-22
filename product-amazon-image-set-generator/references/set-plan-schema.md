@@ -28,7 +28,7 @@ The separate spec owns `module_id`, `buyer_question`, `product_references`, `pos
 
 A reference retains its path, role and usage scope. Original product refs use `PRODUCT_EVIDENCE / PRODUCT_IDENTITY_ONLY`; pose refs use `POSE_ONLY / POSE_CAMERA_COMPOSITION_LIGHTING_BACKGROUND_ONLY`. Style and reviewed-candidate IDs resolve through the input snapshot. Each prior image remains opt-in, with no automatic inheritance from the previous module.
 
-Use the [visual-quality schema](../../product-single-image-generator/references/visual-quality.md) for quality fields. It describes the resolved object; catalog templates remain shared. Output requirements specify format, aspect ratio and background. A+ requires exact `width_px: 1464` / `height_px: 600` and the matching ratio, including ungrouped tasks; other canvases remain archival. Gallery retains its own output requirements. Each `modules[]` row remains one independent image task, not necessarily one Amazon page module.
+Use the [visual-quality schema](../../product-single-image-generator/references/visual-quality.md) for quality fields. It describes the resolved object; catalog templates remain shared. Output requirements specify format, aspect ratio and background. A+ requires `postprocess: CODE_CROP_RESIZE`, `format: PNG`, exact `width_px: 1464` / `height_px: 600` and the matching ratio, including ungrouped tasks; the final dimensions are established by code crop/resampling and checked from real pixels, other canvases remain archival. Gallery retains its own output requirements. Each `modules[]` row remains one independent image task, not necessarily one Amazon page module.
 
 ## A+ page grouping when selected
 
