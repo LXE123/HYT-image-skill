@@ -19,6 +19,8 @@ For this department, A+ delivers only a code-exported 1464×600 PNG. Generate a 
 
 Prioritize **2.44:1 (1464:600)** landscape framing during A+ generation, before style/reference framing or local layout choices. Put it first in every image prompt and use supported size/ratio controls when available; follow the single-image [export guidance](../product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export) for tool limits. Exact delivery pixels still require code export.
 
+New A+ contracts require source/crop QA before export. Use the packet's source-review path and the single-image [guarded export workflow](../product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export); projected geometry and recorded judgment must permit the crop, then the final image receives its own QA. No automatic segmentation service is assumed.
+
 ## 2. Turn responsibilities into an image plan
 
 **Content group ≠ output image.** Seven module descriptions are seven responsibilities, not seven photographs. Use [A+ grouping](references/a-plus-module-layout.md) when establishing/revising grouping or choosing a seed, or [Gallery coverage](references/amazon-planning.md) when planning Gallery coverage. A complete saved ledger can be reused directly. The nine-image A+ seed is `1+1+2+2+1+1+1`; it is revisable, not a required content list.

@@ -241,5 +241,5 @@ def module_stub(module_id: str, channel: str, sequence: int, task: str, question
         "forbidden_changes": [],
         "copy": {"title": "", "subtitle": "", "labels": []},
         "output_requirements": {"format": "PNG", "aspect_ratio": ratio, "background": background,
-                                **({"postprocess": "CODE_CROP_RESIZE"} if channel == "PREMIUM_A_PLUS" else {})},
+                                **({"postprocess": "CODE_CROP_RESIZE", "pre_crop_review": "OBSERVED_LAYOUT_V1"} if channel == "PREMIUM_A_PLUS" else {})},
     }

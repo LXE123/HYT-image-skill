@@ -9,7 +9,8 @@ import unittest
 SINGLE = Path(__file__).resolve().parents[3] / 'product-single-image-generator/scripts'
 sys.path.insert(0, str(SINGLE))
 from PIL import Image, ImageDraw, PngImagePlugin
-from finalize_a_plus_image import TARGET, METHOD, METADATA_KEY, crop_geometry, finalize, export_errors
+from finalize_a_plus_image import TARGET, METHOD, METADATA_KEY, CROP_REVIEW, assess_crop, crop_geometry, finalize, export_errors
+from quality_rules import review_binding
 
 
 class CodeCropTest(unittest.TestCase):
@@ -150,6 +151,97 @@ class CodeCropTest(unittest.TestCase):
         contract = json.loads((self.root/'runs/standalone/material_generation_contract.json').read_text())
         self.assertEqual(contract['output_requirements']['postprocess'], METHOD)
         self.assertEqual([contract['output_requirements'][k] for k in ('width_px','height_px','format')], [1464,600,'PNG'])
+        self.assertEqual(contract['output_requirements']['pre_crop_review'], CROP_REVIEW)
+
+    def source_review_fixture(self, layout=None):
+        contract_path = self.root/'contract.json'
+        report_path = self.root/'qa/source.json'
+        contract = {'candidate_id': 'fixture', 'target_view': 'detail', 'output_path': 'final.png', 'references': [], 'copy': {'title': 'FEATURE'},
+                    'quality_contract': {'layout': layout or {}},
+                    'output_requirements': {**self.requirements, 'pre_crop_review': CROP_REVIEW}}
+        contract_path.write_text(json.dumps(contract))
+        import hashlib
+        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        image_hash = sha(self.raw)
+        report = {'schema_version': 2, 'candidate_id': 'fixture', 'phase': 'SOURCE_IMAGE',
+                  'candidate_sha256': image_hash, 'contract_sha256': sha(contract_path),
+                  'review_binding': review_binding(self.root, contract, image_hash),
+                  'inspection_method': 'VISUAL_INSPECTION', 'reviewer': 'synthetic crop fixture, not visual acceptance',
+                  'composition': {'coordinate_space': 'SOURCE_IMAGE', 'image_sha256': image_hash,
+                                  'annotation_method': 'ASSISTANT_VISUAL_ESTIMATE', 'boundary_certainty': 'CLEAR', 'required_content': 'COMPLETE',
+                                  'product_regions': [{'label': 'red product', 'box': [.13,.34,.53,.64]}],
+                                  'copy_regions': [{'label': 'feature text', 'box': [.58,.46,.75,.52]}],
+                                  'protected_regions': [{'label': 'required detail', 'box': [.2,.4,.4,.5]}]},
+                  'checks': {key: {'status': 'PASS', 'observation': 'synthetic crop decision'} for key in ('layout_output','design_quality')}}
+        with Image.open(self.raw) as image:
+            decision = assess_crop(image.size, image_hash, contract, report)
+        if 'normalized_crop_box' in decision:
+            report['reviewed_crop_box'] = decision['normalized_crop_box']
+        report_path.parent.mkdir(parents=True)
+        report_path.write_text(json.dumps(report))
+        return contract, report, contract_path, report_path
+
+    def test_guarded_export_derives_protected_crop_and_retains_review_provenance(self):
+        contract, _, path, report = self.source_review_fixture()
+        record = finalize(self.raw, self.out, package=self.root, contract_path=path, review_path=report)
+        self.assertEqual(record['layout_review']['method'], CROP_REVIEW)
+        self.assertEqual(export_errors(self.root, self.out, contract['output_requirements']), [])
+        with Image.open(self.out) as image:
+            self.assertEqual(image.size, TARGET)
+
+    def test_guard_rejects_cut_content_uncertainty_and_unreviewed_crop_without_writing(self):
+        contract, report, path, report_path = self.source_review_fixture()
+        import copy
+        for change in ('cut', 'uncertain', 'wrong-crop', 'failed-design'):
+            data = copy.deepcopy(report)
+            keep = None
+            if change == 'cut': keep = [.1,.7,.9,.9]
+            if change == 'uncertain': data['composition']['boundary_certainty'] = 'UNCERTAIN'
+            if change == 'wrong-crop': data['reviewed_crop_box'] = [0,0,1,1]
+            if change == 'failed-design': data['checks']['design_quality']['status'] = 'FAIL'
+            report_path.write_text(json.dumps(data))
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                finalize(self.raw, self.out, keep, package=self.root, contract_path=path, review_path=report_path)
+            self.assertFalse(self.out.exists())
+
+    def test_guard_rejects_projected_copy_conflict_even_if_region_fits(self):
+        contract, report, path, report_path = self.source_review_fixture({'copy_box': [0,0,.6,1], 'review_constraints': {'product_clear_of_copy': True}})
+        with self.assertRaisesRegex(ValueError, 'intrudes'):
+            finalize(self.raw, self.out, package=self.root, contract_path=path, review_path=report_path)
+        self.assertFalse(self.out.exists())
+
+    def test_guard_cannot_be_bypassed_with_legacy_export_and_detects_changed_source_report(self):
+        contract, report, path, report_path = self.source_review_fixture()
+        legacy = self.root/'legacy.png'
+        finalize(self.raw, legacy, [.1,.25,.9,.75])
+        self.assertTrue(any('missing source' in e for e in export_errors(self.root, legacy, contract['output_requirements'])))
+        finalize(self.raw, self.out, package=self.root, contract_path=path, review_path=report_path)
+        report['checks']['layout_output']['observation'] = 'changed after export'
+        report_path.write_text(json.dumps(report))
+        self.assertTrue(any('changed' in e for e in export_errors(self.root, self.out, contract['output_requirements'])))
+
+    def test_crop_check_only_returns_proposal_without_exporting(self):
+        _, report, path, report_path = self.source_review_fixture()
+        report.pop('reviewed_crop_box')
+        report_path.write_text(json.dumps(report))
+        run = subprocess.run([sys.executable, str(SINGLE/'finalize_a_plus_image.py'), '--source', str(self.raw), '--output', str(self.out),
+                              '--package', str(self.root), '--contract', str(path), '--review', str(report_path), '--check-only'], capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(json.loads(run.stdout)['status'], 'REVIEW_REQUIRED')
+        self.assertIn('normalized_crop_box', json.loads(run.stdout))
+        self.assertFalse(self.out.exists())
+
+    def test_source_phase_draft_initializes_before_final_exists(self):
+        _, _, path, _ = self.source_review_fixture()
+        (self.root/'PRODUCT_STATE.json').write_text('{"candidates":[]}')
+        run = subprocess.run([sys.executable, str(SINGLE/'candidate_qa.py'), str(self.root), '--contract', str(path.name),
+                              '--report', 'qa/draft-source.json', '--init', '--source-image', 'raw.png'], capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        draft = json.loads((self.root/'qa/draft-source.json').read_text())
+        self.assertEqual(draft['phase'], 'SOURCE_IMAGE')
+        self.assertEqual(draft['composition']['coordinate_space'], 'SOURCE_IMAGE')
+        self.assertIsNone(draft['reviewed_crop_box'])
+        self.assertFalse(self.out.exists())
 
 
 if __name__ == '__main__':

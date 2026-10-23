@@ -183,6 +183,23 @@ class RealCompositionBenchmarkTest(unittest.TestCase):
                 result = composition_result(case['contract'], case['composition'], digest(image_path))
                 self.assertEqual(result['status'], case['expected_composition'])
 
+    def test_source_crop_guard_against_the_same_annotated_cases(self):
+        from finalize_a_plus_image import assess_crop
+        manifest_path = Path(os.environ['PRODUCT_COMPOSITION_BENCHMARK'])
+        manifest = json.loads(manifest_path.read_text())
+        for case in manifest['cases']:
+            with self.subTest(case=case['id']):
+                image_path = manifest_path.parent/case['image_path']
+                observed = copy.deepcopy(case['composition'])
+                observed['coordinate_space'] = 'SOURCE_IMAGE'
+                report = {'phase': 'SOURCE_IMAGE', 'candidate_sha256': digest(image_path), 'composition': observed,
+                          'reviewed_crop_box': [0,0,1,1], 'inspection_method': 'VISUAL_INSPECTION',
+                          'reviewer': 'assistant benchmark annotation, pending human confirmation',
+                          'checks': {key: {'status': 'PASS', 'observation': 'exercise the declared benchmark crop only'} for key in ('layout_output','design_quality')}}
+                with Image.open(image_path) as image:
+                    result = assess_crop(image.size, digest(image_path), case['contract'], report)
+                self.assertEqual(result['status'], case['expected_composition'])
+
 
 if __name__ == '__main__':
     unittest.main()

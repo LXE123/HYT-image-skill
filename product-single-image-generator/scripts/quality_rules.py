@@ -73,14 +73,14 @@ def normalized_box(box):
             and 0 <= box[0] < box[2] <= 1 and 0 <= box[1] < box[3] <= 1)
 
 
-def composition_result(contract, observed, image_hash):
+def composition_result(contract, observed, image_hash, *, coordinate_space="FINAL_IMAGE"):
     """Check annotations and explicit geometry constraints; never detect objects or grade aesthetics."""
     uncertain = []
     failures = []
     if not isinstance(observed, dict):
         return {"status": "REVIEW_REQUIRED", "reasons": ["actual composition observations are missing"], "metrics": {}}
-    if observed.get("coordinate_space") != "FINAL_IMAGE" or observed.get("image_sha256") != image_hash:
-        uncertain.append("composition must refer to the current final image hash and FINAL_IMAGE coordinates")
+    if observed.get("coordinate_space") != coordinate_space or observed.get("image_sha256") != image_hash:
+        uncertain.append(f"composition must refer to the current image hash and {coordinate_space} coordinates")
     if observed.get("annotation_method") not in {"ASSISTANT_VISUAL_ESTIMATE", "HUMAN_ANNOTATION"}:
         uncertain.append("identify who annotated actual image regions")
     if observed.get("boundary_certainty") != "CLEAR":
@@ -190,6 +190,8 @@ def required_checks(contract):
 def validate_quality(root, contract, index, locks):
     errors = []
     output = contract.get("output_requirements", {})
+    if isinstance(output, dict) and output.get("pre_crop_review") not in (None, "OBSERVED_LAYOUT_V1"):
+        errors.append("unsupported pre_crop_review method")
     if isinstance(output, dict) and output.get("postprocess") == "CODE_CROP_RESIZE" and (output.get("width_px"), output.get("height_px"), output.get("format")) != (1464, 600, "PNG"):
         errors.append("code-cropped A+ output requires PNG at exactly 1464x600")
     if contract.get("module_language_policy_version") == 1:

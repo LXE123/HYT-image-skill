@@ -115,7 +115,7 @@ def main() -> int:
             "output_path": relative_candidate,
         }
         if args.a_plus:
-            contract["output_requirements"].update(width_px=1464, height_px=600, aspect_ratio="1464:600", postprocess="CODE_CROP_RESIZE")
+            contract["output_requirements"].update(width_px=1464, height_px=600, aspect_ratio="1464:600", postprocess="CODE_CROP_RESIZE", pre_crop_review="OBSERVED_LAYOUT_V1")
         write_json(contract_path, contract)
         print(f"CREATE  合同草稿：{relative_contract}")
 

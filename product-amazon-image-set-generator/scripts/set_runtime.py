@@ -154,10 +154,15 @@ def packet(root, plan, state, product, row, phase, max_images):
             result["raw_output_path"] = str(final_path.with_name(final_path.stem + ".raw.png"))
             result["postprocess"] = {"script": str(SINGLE / "finalize_a_plus_image.py"),
                                      "instruction": "Save to raw_output_path; code-export to output_path before review: same ratio resizes full frame; otherwise inspect and set --keep-box."}
+            if contract["output_requirements"].get("pre_crop_review") == "OBSERVED_LAYOUT_V1":
+                result["postprocess"]["source_review_path"] = f"qa/visual/{contract['candidate_id']}-source.json"
+                result["postprocess"]["instruction"] = "Inspect source QA, check proposed crop, then export with --package/--contract/--review; inspect the final separately."
             if Path(result["raw_output_path"]).is_file():
                 result["phase"] = "postprocess"
                 result.pop("prompt")
                 result["postprocess"]["instruction"] = "Raw exists; code-export to output_path, no regeneration. Same ratio resizes full frame; otherwise inspect and set --keep-box."
+                if contract["output_requirements"].get("pre_crop_review") == "OBSERVED_LAYOUT_V1":
+                    result["postprocess"]["instruction"] = "Raw exists; no regeneration. Inspect source QA, check crop, then guarded export with --package/--contract/--review."
     else:
         candidate = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), {"path": contract["output_path"]})
         image = resolve_file(root, candidate["path"])

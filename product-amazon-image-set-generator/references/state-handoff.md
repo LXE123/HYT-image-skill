@@ -50,6 +50,8 @@ After finishing a report, link it using the existing record command: `set_runtim
 
 The same invalidated/failed input without any corrective change is not progress: retain the result and proceed to its stated next action. Preserve the existing blocked/retry states rather than adding a second phase machine. After an interrupted tool call, reconcile the job/result and both raw/final paths before attempting generation again.
 
+New A+ output requirements also contain `pre_crop_review: OBSERVED_LAYOUT_V1`. The generation/postprocess packet gives `source_review_path`: initialize that existing QA report type with `candidate_qa.py --init --source-image <relative-raw>`, inspect source composition, query `finalize_a_plus_image.py --check-only`, and record the actual reviewed normalized crop plus layout/design observations. Guarded export binds this source report and contract in the PNG. Preserve it; final QA uses a different report path and the final image hash. Unknown/failed source layout cannot be accepted by exporting through the legacy command without a guard. Old contracts without this requirement keep their original workflow until an explicit revision.
+
 ```text
 python3 scripts/set_runtime.py <package> --set-id <set> record --module-id <id> --decision REJECTED_TOPOLOGY --failure-code HARDWARE_STATE --report qa/visual/<candidate>.json
 python3 scripts/set_runtime.py <package> --set-id <set> prepare --module-id <id> --retry --correction "Preserve the original connector count and routing"

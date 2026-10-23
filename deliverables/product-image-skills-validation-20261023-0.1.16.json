@@ -1,0 +1,50 @@
+{
+  "version": "0.1.16",
+  "date": "2026-10-23",
+  "source_base_commit": "f781ae8e654a32fd33ddf212a04f3312069d45be",
+  "regression_tests": {
+    "run": 152,
+    "passed": 152,
+    "failed": 0,
+    "skipped": 0,
+    "real_benchmark_enabled": true
+  },
+  "skill_entry_validation": "3/3 passed",
+  "syntax_json": "passed",
+  "local_markdown_reference_paths_checked": 57,
+  "package_source_parity": "passed",
+  "zip_crc_and_sha256": "passed",
+  "source_crop_guard": "source hash, protected regions, projected explicit layout and recorded exact-crop judgment required for new A+ tasks",
+  "legacy_export_compatibility": "existing tasks without pre_crop_review retain prior behavior",
+  "web_execution_tested": false,
+  "visual_generation_tested": false,
+  "human_visual_acceptance": false,
+  "sam2": {
+    "status": "research only, not integrated",
+    "local_torch_available": false,
+    "local_sam2_available": false,
+    "inference_tested": false,
+    "weights_in_package": false
+  },
+  "real_benchmark": {
+    "cases": 7,
+    "annotation": "ASSISTANT_VISUAL_ESTIMATE",
+    "human_verified": false,
+    "scope": "existing geometry checks plus pre-crop guard; no automatic detection or aesthetic accuracy claim"
+  },
+  "generation_packet_bytes": {
+    "min": 4901,
+    "max": 4939,
+    "fixture_images": 30
+  },
+  "package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "versioned_package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261023-0.1.16.zip",
+  "package_sha256": "6e7951d825a57f668084ef0db1584055d4aedc3fe15b05d34a794b5f12a11dd0",
+  "size_bytes": 205336,
+  "zip_entries": 67,
+  "skill_file_counts": {
+    "product-image-project-builder": 19,
+    "product-single-image-generator": 18,
+    "product-amazon-image-set-generator": 27
+  }
+}

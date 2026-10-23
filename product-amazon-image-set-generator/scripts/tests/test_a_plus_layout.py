@@ -13,8 +13,8 @@ sys.path.insert(0, str(SCRIPTS))
 from a_plus_layout import design_handoff, image_membership, layout_errors, layout_progress, profile_drafts
 from set_common import default_modules, generation_mode_errors, load_json, plan_modules, sha256, store_module_spec, write_json
 from context_store import load_contract
-from quality_rules import qa_errors, required_checks
-from finalize_a_plus_image import finalize, export_errors
+from quality_rules import qa_errors, required_checks, review_binding
+from finalize_a_plus_image import assess_crop, finalize, export_errors
 from PIL import Image
 
 
@@ -53,7 +53,27 @@ class APlusLayoutTest(unittest.TestCase):
         raw.parent.mkdir(parents=True, exist_ok=True)
         if not raw.exists():
             Image.new('RGB', (1536, 1024), '#c9b7a1').save(raw)
-        finalize(raw, Path(packet['output_path']), [0.05, 0.25, 0.95, 0.75])
+        contract_path = self.root/packet['contract_path']
+        contract = load_contract(self.root, contract_path)
+        keep = [0.05, 0.25, 0.95, 0.75]
+        if contract['output_requirements'].get('pre_crop_review'):
+            image_hash = sha256(raw)
+            report = {'schema_version': 2, 'candidate_id': contract['candidate_id'], 'phase': 'SOURCE_IMAGE',
+                      'candidate_sha256': image_hash, 'contract_sha256': sha256(contract_path),
+                      'review_binding': review_binding(self.root, contract, image_hash),
+                      'reviewer': 'synthetic fixture, not real visual acceptance', 'inspection_method': 'VISUAL_INSPECTION',
+                      'composition': {'coordinate_space': 'SOURCE_IMAGE', 'image_sha256': image_hash,
+                                      'annotation_method': 'ASSISTANT_VISUAL_ESTIMATE', 'boundary_certainty': 'CLEAR', 'required_content': 'COMPLETE',
+                                      'product_regions': [{'label': 'fixture product', 'box': [.1,.35,.85,.65]}],
+                                      'copy_regions': [{'label': 'fixture copy', 'box': [.1,.26,.85,.34]}], 'protected_regions': []},
+                      'checks': {key: {'status': 'PASS', 'observation': 'synthetic gate observation'} for key in ('layout_output','design_quality')}}
+            with Image.open(raw) as image:
+                report['reviewed_crop_box'] = assess_crop(image.size, image_hash, contract, report, keep)['normalized_crop_box']
+            report_path = self.root/f"qa/visual/{contract['candidate_id']}-source.json"
+            write_json(report_path, report)
+            finalize(raw, Path(packet['output_path']), keep, package=self.root, contract_path=contract_path, review_path=report_path)
+        else:
+            finalize(raw, Path(packet['output_path']), keep)
 
     def initialize(self, count=9):
         self.run_script("init_visual_set.py", "--set-id", "aplus", "--deliverable", "a-plus", "--count", str(count))

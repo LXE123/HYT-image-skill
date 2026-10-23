@@ -95,6 +95,8 @@ product-amazon-image-set-generator
 
 A+ 的尺寸转换使用 [finalize_a_plus_image.py](product-single-image-generator/scripts/finalize_a_plus_image.py)，需要 Pillow。同比例原图保留完整画面缩放，例如 2928×1200 → 1464×600；异比例时先选择包含产品和文案的保留区域，由代码裁剪并等比例缩放。导出后检查内容完整、细字与纹理清晰度；具体命令和参数见 [代码导出说明](product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export)。无法保留关键内容时调整构图或重新生成，代码执行不可用时标注导出未完成。
 
+新 A+ 任务在导出前检查原图与拟裁剪范围：必要内容、明确文案区约束和实际构图观察允许后才导出，最终图仍单独审核。SAM 2 引导分割目前是 [接入研究](product-single-image-generator/references/sam2-assessment.md)，尚未安装或运行；测试包不含模型权重，当前使用助手/人工标注。
+
 ### 3. 只生成一张图片
 
 ```text
