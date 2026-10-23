@@ -28,7 +28,7 @@ At 10–15 images add distinct supported functional detail, another construction
 
 ## Premium A+
 
-For this department's A+ use the [revisable page grouping](a-plus-module-layout.md), normally 13 separate 1464 × 600 images. The generic conceptual sequence below is an alternative when explicitly selected, not an automatic substitute for the design brief. Adapt image count between 9 and 15 to actual coverage; page groups and image count are independent.
+For this department's A+ use the [page skeleton and seven responsibilities](a-plus-module-layout.md#page-skeleton-and-seven-responsibilities), normally 13 separate 1464 × 600 images. Plan the upper product explanation/use/selection section, followed by lifestyle; allocate extra slides inside those responsibilities. Product introduction, core material/benefit, structure/craft, function/use, range, size/compatibility and lifestyle provide coverage; related responsibilities may share a group. Care belongs within function/use when relevant and supported. Adapt the initializer's legacy order before approving a new draft. The generic conceptual sequence below is an alternative when explicitly selected, not an automatic substitute for the design brief. Adapt image count between 9 and 15 to actual coverage; page groups and image count are independent.
 
 1. Brand/product hero.
 2. Material story.
