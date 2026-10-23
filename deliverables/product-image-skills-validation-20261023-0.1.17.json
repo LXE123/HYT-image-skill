@@ -24,7 +24,7 @@
   "human_visual_acceptance": false,
   "sam2": "not integrated; excluded from scope",
   "automatic_typesetting_script_added": false,
-  "package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261023-0.1.17.zip",
   "versioned_package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261023-0.1.17.zip",
   "package_sha256": "8e23baf00fe3bc0b3ca6409026ac9598a30837c0b5f126ea708e307844a87e15",
   "size_bytes": 206187,

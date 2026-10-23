@@ -1,0 +1,34 @@
+{
+  "version": "0.1.18",
+  "date": "2026-10-23",
+  "source_base_commit": "6615a173e63e69156821eb252613c7d92fbe423f",
+  "package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261023-0.1.18.zip",
+  "latest_package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "package_sha256": "3b6119b658b09b2e5085ac047dfe0b95e933a2a184a9d5d277d620c9b5fe7d48",
+  "size_bytes": 201251,
+  "archive_root": "product-visual-skills",
+  "zip_entries": 65,
+  "skill_file_counts": {
+    "product-image-project-builder": 19,
+    "product-single-image-generator": 18,
+    "product-amazon-image-set-generator": 27
+  },
+  "skill_entry_validation": "3/3 passed",
+  "python_ast_files_checked": 27,
+  "json_files_checked": 4,
+  "local_markdown_reference_paths_checked": 90,
+  "package_source_parity": "passed",
+  "zip_crc_and_sha256": "passed",
+  "regression_tests": {
+    "execution": "REUSED",
+    "run_this_round": false,
+    "reused_from_version": "0.1.16",
+    "previous_run": 152,
+    "previous_passed": 152,
+    "runtime_files_match_previous_archive": 38
+  },
+  "content_policy": "Only plugin manifest and three skill directories; excludes startup text, checksums file, product/test data, promotional copy and development tests.",
+  "web_execution_tested": false,
+  "visual_generation_tested": false,
+  "human_visual_acceptance": false
+}
