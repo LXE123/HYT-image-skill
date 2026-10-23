@@ -1,0 +1,38 @@
+{
+  "version": "0.1.17",
+  "date": "2026-10-23",
+  "source_base_commit": "10f8fa5f829a4828bb4b328d794707f25bf7ab9c",
+  "regression_tests": {
+    "execution": "REUSED",
+    "run_this_round": false,
+    "reused_from_version": "0.1.16",
+    "previous_run": 152,
+    "previous_passed": 152,
+    "previous_skipped": 0,
+    "runtime_files_match_previous_archive": 38,
+    "previous_archive_sha256": "6e7951d825a57f668084ef0db1584055d4aedc3fe15b05d34a794b5f12a11dd0"
+  },
+  "skill_entry_validation": "3/3 passed",
+  "python_ast_files_checked": 27,
+  "json_files_checked": 4,
+  "local_markdown_reference_paths_checked": 85,
+  "text_criteria_anchor_validation": "passed",
+  "package_source_parity": "passed",
+  "zip_crc_and_sha256": "passed",
+  "web_execution_tested": false,
+  "visual_generation_tested": false,
+  "human_visual_acceptance": false,
+  "sam2": "not integrated; excluded from scope",
+  "automatic_typesetting_script_added": false,
+  "package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "versioned_package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261023-0.1.17.zip",
+  "package_sha256": "8e23baf00fe3bc0b3ca6409026ac9598a30837c0b5f126ea708e307844a87e15",
+  "size_bytes": 206187,
+  "zip_entries": 67,
+  "skill_file_counts": {
+    "product-image-project-builder": 19,
+    "product-single-image-generator": 18,
+    "product-amazon-image-set-generator": 27
+  },
+  "archive_root": "product-visual-skills-20261019"
+}
