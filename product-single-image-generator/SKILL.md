@@ -39,7 +39,7 @@ A+ delivery always runs [finalize_a_plus_image.py](scripts/finalize_a_plus_image
 
 For mismatched ratios, AI identifies a normalized `--keep-box` containing all required product, person/action and lettering in the original. The script finds a crop retaining that region; it refuses a region that cannot fit. Do not blindly center-crop or omit important content to make the command pass. Recompose/regenerate if needed; explicit `--allow-upscale` permits enlargement with sharpness review. Even an already exact-size original passes through the script into a separate final file. If code execution/Pillow is unavailable, report the unfinished export rather than claiming a compliant deliverable.
 
-The guard checks projected region containment and explicit layout constraints, and requires a recorded visual judgment for that exact crop. It does not detect product boundaries or grade visual balance itself. Source/crop QA cannot substitute for final-image QA. Optional SAM 2 segmentation is [research only](references/sam2-assessment.md); do not claim the model is installed or its masks were used.
+The guard checks projected region containment and explicit layout constraints, and requires a recorded visual judgment for that exact crop. It does not detect product boundaries or grade visual balance itself. Source/crop QA cannot substitute for final-image QA. Use the existing assistant/human observations; no segmentation model runtime is required.
 
 ## Inspect and record
 

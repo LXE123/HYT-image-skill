@@ -32,7 +32,7 @@
 
 新 A+ 任务要求裁剪前检查：使用 `candidate_qa.py --init --source-image <包内原图路径>` 创建原图 QA，按 `SOURCE_IMAGE` 坐标标注实际产品/指定细节、文字和保护区域；再按 [完整代码导出步骤](../../product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export) 查询拟裁剪框。脚本会投影到目标画幅，检查必要内容保留及明确的排版约束。根据实际原图和拟裁剪范围检查主体大小、文案可用性和重心，记录对应裁剪框及观察后，使用 `--package/--contract/--review` 导出。检查不确定或失败时不导出，不靠改 PASS 绕过。导出后另建最终图 QA，不能复用原图坐标或把原图检查当作最终验收；这些是内部检查，不新增逐图用户批准。
 
-SAM 2 引导分割目前只有 [接入研究](../../product-single-image-generator/references/sam2-assessment.md)，没有安装模型、推理适配器或随包权重；网页导入技能 ZIP 不自动获得该能力。当前区域仍由助手/人工标注，不得声称已执行 SAM 2 检测。
+区域观察沿用助手/人工标注，不接入 SAM 2 或安装模型；点或粗框只在目标歧义时辅助看图，不作为检测结果。
 
 交付前把实际候选并列查看背景明暗、色温、对比度/阴影和字体是否连贯；偏离共享范围的图片局部纠正，不因单张好看就认定整套统一。沿用 `design_quality` 记录观察，不新增评分表或风格确认流程。
 

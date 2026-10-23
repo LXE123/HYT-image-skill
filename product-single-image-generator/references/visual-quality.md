@@ -90,6 +90,8 @@ Only a human can accept the candidate. A visual failure cannot be hidden by a hu
 
 `quality_contract.layout.product_box` / `copy_box` remain target intent. Do not copy them into actual observations without looking at the final image. Record normalized `[left, top, right, bottom]` boxes in 0..1, using the final candidate's coordinates and SHA-256. Raw-image coordinates cannot be reused after cropping. Multiple product parts or text blocks use separate labelled regions.
 
+Borrow guided segmentation's target-selection idea without installing a model: identify the sold product or assigned detail first, distinguishing it from the watch, skin, reflections and background. When selection is ambiguous, use a visual point or rough box as a temporary inspection aid, then inspect the full required extent and record the observed regions above. A guidance point/box is not a measured boundary, mask or proof of completeness. Refine only the ambiguous area using the image and reference evidence; if it remains unclear, record uncertainty. No new prompt fields, mask files or extra review stage are required.
+
 The draft's `composition` has this shape (example coordinates only):
 
 ```json
