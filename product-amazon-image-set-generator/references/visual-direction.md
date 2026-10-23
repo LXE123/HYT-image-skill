@@ -46,7 +46,7 @@ For each image, choose which points have a natural, evidence-grounded visual exp
 
 Record the decision in the existing `creative_brief` (visual device, graphic treatment, hierarchy and success criteria), not another expression registry. Keep copy-only points out of visual `must_show`/fact dependencies. Exact copy supplies lettering; it is not a command to stage its claims. Supplied wording stays exact; writing new copy needs authorization. Missing evidence cannot be bypassed by using text.
 
-Constrain product identity, evidence, required information, exact copy, scope and the A+ canvas of 1464×600. Let AI choose composition, suitable scenes, visual devices and information density; lighting and typography vary within the selected shared range. Integrated image/text generation or separate typesetting may be chosen for accurate, legible output; neither is a mandatory extra stage. A separate text pass must preserve the product image and receive the final copy without turning it into new scene instructions.
+Constrain product identity, evidence, required information, exact copy, scope and the A+ canvas of 1464×600. Let AI choose composition, suitable scenes, visual devices and information density; lighting and typography vary within the selected shared range. Choose integrated generation or separate typesetting using the single-image [text execution criteria](../../product-single-image-generator/references/art-direction.md#文字生成与单独排字); neither is a mandatory extra stage. A separate text pass must preserve the product image and receive the final copy without turning it into new scene instructions.
 
 ## One image's creative brief
 
