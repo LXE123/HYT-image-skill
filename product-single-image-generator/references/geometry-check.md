@@ -2,6 +2,8 @@
 
 Geometry checking is an optional module inside `product-single-image-generator`. It compares a saved candidate with an explicitly approved template for the same SKU and view. It does not infer identity, alter candidates, generate images, or approve commercial quality.
 
+Compare compatible projections and product poses: a perspective view, wrapped wearing pose or assigned macro cannot be judged against a flat full-product silhouette merely because it is the same SKU. Use a suitable approved template when available; otherwise retain unavailable/review-required status and inspect against the product evidence. Do not reject a candidate solely for lacking a comparable template, force it into the template's composition, or relax thresholds to conceal a mismatch. A view change already authorized by the current task does not itself imply a product-structure error.
+
 ## Template configuration
 
 Put one configuration at `qa/geometry/templates/<view>/config.json`, with its template image, binary mask, and annotation in the same folder. The template must be approved for the exact SKU and view. Build it primarily from an approved render/mask pair and bind it to the current identity-lockset version. Add local anchor IDs only for high-risk components.
