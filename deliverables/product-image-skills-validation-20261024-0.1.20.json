@@ -1,0 +1,38 @@
+{
+  "version": "0.1.20",
+  "date": "2026-10-24",
+  "source_base_commit": "f3953b21ca42811dfe79fe14b8392f6e0753ab66",
+  "package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261024-0.1.20.zip",
+  "latest_package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "archive_root": "product-visual-skills",
+  "package_sha256": "8e6c405330ce4730453de4f734bb4fff586c0fb1fbb55015962992de6add63ae",
+  "size_bytes": 214676,
+  "zip_entries": 68,
+  "skill_file_counts": {
+    "product-image-project-builder": 19,
+    "product-single-image-generator": 21,
+    "product-amazon-image-set-generator": 27
+  },
+  "skill_entry_validation": "3/3 passed",
+  "python_ast_files_checked": 30,
+  "json_files_checked": 4,
+  "local_markdown_reference_paths_checked": 100,
+  "execution_strategy_anchor_validation": "passed",
+  "structure_state_anchor_validation": "passed",
+  "package_source_parity": "passed",
+  "zip_crc_and_sha256": "passed",
+  "extracted_cli_help_smoke_tests": "3/3 passed",
+  "regression_tests": {
+    "run_this_round": false,
+    "execution": "REUSED",
+    "source_commit": "f3953b21ca42811dfe79fe14b8392f6e0753ab66",
+    "previous_run": 172,
+    "previous_passed": 170,
+    "previous_skipped": 2,
+    "skip_reason": "Optional real-image composition benchmark not configured"
+  },
+  "content_policy": "Only plugin manifest and three skill directories; no promotional copy, product data, startup guide, checksum manifest, development tests, or caches.",
+  "web_execution_tested": false,
+  "visual_generation_tested": false,
+  "human_visual_acceptance": false
+}
