@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate a product run contract and advance the active workflow after preflight."""
 
+from structure_state import dependency_errors
 import argparse
 import json
 from pathlib import Path, PurePosixPath
@@ -27,6 +28,7 @@ def safe_relative(value: object) -> bool:
 
 def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
 
 
 def main() -> int:
@@ -108,8 +110,8 @@ def main() -> int:
         lockset = state.get("identity_lockset") if state else None
         if not isinstance(lockset, dict) or lockset.get("status") != "READY":
             errors.append("生成前检查要求 PRODUCT_STATE.json 中有 READY 的 identity_lockset")
-        elif contract.get("identity_lockset_version") != lockset.get("version"):
-            errors.append("合同 identity_lockset_version 与当前状态不一致")
+        elif dependency_errors(state, contract.get("required_lock_ids"), contract.get("resolved_identity_locks")):
+            errors.extend(dependency_errors(state, contract.get("required_lock_ids"), contract.get("resolved_identity_locks")))
         else:
             required_locks = contract.get("required_lock_ids")
             locks = {item.get("lock_id"): item for item in lockset.get("locks", []) if isinstance(item, dict)}

@@ -10,6 +10,9 @@ from pathlib import Path
 from set_common import SAFE_ID, compile_prompt, load_contract, load_json, plan_modules, qa_errors, resolve_file, sha256, update_product_summary, validate_quality, write_json
 
 
+from structure_state import dependency_errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package", type=Path)
@@ -39,7 +42,6 @@ def main() -> int:
                 sha256(snapshot_path) != plan.get("approved_input_snapshot_sha256")
                 or sha256(root / "index.json") != snapshot.get("reference_snapshot", {}).get("index_sha256")
                 or current_locks.get("status") != "READY"
-                or current_locks.get("version") != plan.get("approved_lockset_version")
                 or product_state.get("workflow", {}).get("status") == "REFERENCE_CHANGED"
             )
         except (OSError, ValueError, KeyError):
@@ -89,8 +91,7 @@ def main() -> int:
                             lockset = product_state.get("identity_lockset", {})
                             locks = {x.get("lock_id"): x for x in lockset.get("locks", []) if isinstance(x, dict)}
                             failures = validate_quality(root, contract, package_index, locks)
-                            if contract.get("identity_lockset_version") != lockset.get("version"):
-                                failures.append("contract lockset version is stale")
+                            failures.extend(dependency_errors(product_state, contract.get("required_lock_ids"), contract.get("resolved_identity_locks")))
                             resolved_module = plan_modules(root, plan, module["module_id"])[0]
                             for key in ("generation_template", "quality_contract"):
                                 if contract.get(key) != resolved_module.get(key):
@@ -118,6 +119,18 @@ def main() -> int:
                 updated["status"] = "REJECTED"
             else:
                 updated["status"] = "REVIEW_REQUIRED"
+        if not sources_changed and plan.get("status") == "APPROVED":
+            try:
+                spec = plan_modules(root, plan, module["module_id"])[0]
+                ids = spec["required_lock_ids"]
+                old = {x["lock_id"]: x for x in snapshot["identity_lockset"]["locks"]}
+                failures = dependency_errors(product_state, ids, [old[x] for x in ids if x in old])
+            except (OSError, ValueError, KeyError) as error:
+                failures = [str(error)]
+            if failures:
+                updated["status"] = "BLOCKED"
+                updated.pop("accepted_output", None)
+                updated["block_reason"] = "; ".join(failures)
         states.append(updated)
 
     set_state["modules"] = states

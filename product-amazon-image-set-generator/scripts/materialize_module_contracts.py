@@ -9,6 +9,7 @@ from pathlib import Path
 
 from set_common import SAFE_ID, compile_prompt, load_json, module_quality_errors, plan_modules, resolve_file, sha256, update_product_summary, write_json
 from design_store import resolve_design
+from structure_state import dependency_errors
 
 
 STYLE_SCOPE = {
@@ -61,7 +62,7 @@ def main() -> int:
     if sha256(root / "index.json") != snapshot.get("reference_snapshot", {}).get("index_sha256"):
         parser.error("current index.json differs from the approved input snapshot")
     lockset = product_state.get("identity_lockset", {})
-    if lockset.get("status") != "READY" or lockset.get("version") != plan.get("approved_lockset_version"):
+    if lockset.get("status") != "READY":
         parser.error("current identity lockset differs from the approved plan")
 
     modules = plan.get("modules", [])
@@ -73,7 +74,12 @@ def main() -> int:
         parser.error("selected module does not exist in the approved plan")
     package_index = load_json(root / "index.json")
     locks = {x.get("lock_id"): x for x in lockset.get("locks", []) if isinstance(x, dict)}
+    pinned_locks = {x["lock_id"]: x for x in snapshot["identity_lockset"]["locks"]}
     for module in selected:
+        ids = module["required_lock_ids"]
+        failures = dependency_errors(product_state, ids, [pinned_locks[x] for x in ids if x in pinned_locks])
+        if failures:
+            parser.error("; ".join(failures))
         if plan.get("design_policy_version"):
             try:
                 resolve_design(root, plan, module)
@@ -152,7 +158,7 @@ def main() -> int:
             "candidate_id": candidate_id,
             "sku": plan["sku"],
             "target_view": target_view,
-            "identity_lockset_version": lockset["version"],
+            "identity_lockset_version": snapshot["identity_lockset"]["version"],
             "required_lock_ids": module["required_lock_ids"],
             "resolved_identity_locks": [locks[x] for x in module["required_lock_ids"]],
             "references": [*module.get("product_references", []), *module.get("pose_references", [])],

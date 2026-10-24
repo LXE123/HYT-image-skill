@@ -7,6 +7,7 @@ from pathlib import Path
 
 from quality_rules import compile_prompt, file_at, validate_quality
 from module_language import resolve_module_language
+from structure_state import dependency_errors
 
 
 def main():
@@ -26,6 +27,11 @@ def main():
         if (root / contract["output_path"]).exists() or any(x.get("candidate_id") == contract.get("candidate_id") for x in state.get("candidates", [])):
             raise ValueError("candidate exists or was registered; create a replacement contract")
         locks = {x["lock_id"]: x for x in state.get("identity_lockset", {}).get("locks", [])}
+        selected = [locks[x] for x in contract.get("required_lock_ids", []) if x in locks]
+        failures = dependency_errors(state, contract.get("required_lock_ids"), selected)
+        if failures:
+            raise ValueError("; ".join(failures))
+        contract["identity_lockset_version"] = state["identity_lockset"]["version"]
         if contract.get("module_language_policy_version") == 1:
             contract["module_language"] = resolve_module_language(contract)
         errors = validate_quality(root, contract, index, locks)

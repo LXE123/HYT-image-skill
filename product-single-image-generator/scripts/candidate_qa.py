@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Create or validate a visual-inspection record without accepting a candidate."""
 
+from structure_state import structure_requirements
 import argparse
 import json
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 from quality_rules import digest, file_at, review_binding, review_status, required_checks
 from context_store import load_contract
 from finalize_a_plus_image import export_errors
+
 
 
 def main():
@@ -61,6 +63,8 @@ def main():
                 "checks": {key: {"status": "NOT_REVIEWED", "observation": ""} for key in sorted({"layout_output", "design_quality"} if args.source_image else required_checks(contract))},
                 "unresolved_items": [],
             }
+            if not args.source_image and structure_requirements(contract):
+                report["structure_observations"] = {key: {"status": "NOT_REVIEWED", "observation": ""} for key in structure_requirements(contract)}
             if args.source_image:
                 report["reviewed_crop_box"] = None
             report_path.parent.mkdir(parents=True, exist_ok=True)

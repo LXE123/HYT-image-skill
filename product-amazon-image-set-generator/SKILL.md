@@ -59,6 +59,8 @@ Choose one initialization route. A completed single-channel filtered brief impor
 
 Batch production uses `next-generation` to select an unproduced child. Ordinary `next` prioritizes pending review; a repeated ID requests inspection, not another generation. Send only the current packet's prompt and actual listed images to the generator. Re-establish this child's role before each call; previous outputs/history are not automatic references. The scripts prepare records and packets; they do not launch image generation or erase chat context.
 
+Structure feedback uses the single-image [state-transfer interface](../product-single-image-generator/references/state-and-contract.md#structure-state-transfer). Synchronization compares each child's required locks with its pinned snapshot: changed/unresolved dependencies block that child, while unrelated children can continue. Revise affected approved tasks from current state; never silently inject new facts into old contracts. A rejected image alone does not change product truth; first distinguish a generation defect from an incorrect/incomplete product interpretation.
+
 ## 5. Review, correct and deliver
 
 Use single-image QA on actual pixels: product truth, relevant anatomy/hardware/operation, exact copy and canvas, buyer-question coverage, role fit and design quality. A script pass verifies records, not appearance. Keep candidates pending human review while producing other authorized tasks. Focused feedback authorizes correction of that image; reuse evidence and preserve unrelated outputs. Pinned changes need a local revision; retry limits and acceptance records follow [state handoff](references/state-handoff.md).

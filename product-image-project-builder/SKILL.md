@@ -44,6 +44,8 @@ Evidence sufficiency depends on coverage and clarity, not a fixed photo count. R
 
 Operating claims require observed state evidence; a static closed photo does not establish a release motion. For recurrent connectors/clasps/routing errors, read [hardware evidence](references/hardware-evidence.md). Preserve correction provenance and related issue IDs. Issues stay open until a generation using the supplement is reviewed; `resolved/verified` requires real user confirmation.
 
+Natural-language analysis reconciles related regions across views into current product state: part ownership, surface/recess geometry, connection/routing and occlusion. Component counts alone are insufficient. Keep product-specific facts in evidence-backed identity locks with optional current-view relations. Corrections use the single-image [structure state transfer](../product-single-image-generator/references/state-and-contract.md#structure-state-transfer) interface; do not add a running transcript or hard-code product parts. Code validates references and applies the semantic delta; it cannot establish whether the interpretation is true.
+
 ## Validate and hand off
 
 Run `python3 scripts/check_package.py <package>` after evidence changes; consult [schema](references/schema.md) for record problems. A changed reference hash sets `REFERENCE_CHANGED`; the single-image skill reconciles dependent locks/contracts/candidates. Do not silently revoke accepted work or mark evidence as visually verified from a script pass.

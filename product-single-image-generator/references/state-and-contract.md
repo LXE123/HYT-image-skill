@@ -144,3 +144,44 @@ Never use a geometry result as the candidate decision. Store the compact geometr
 ## Human review record
 
 For each review, record candidate ID/hash, reviewer authority, source contract, decision, checked items, unresolved items, and follow-up. Cover sellable-object boundary, variant, silhouette, components, connectors, fastening, routing, overlaps, visible surfaces, target-view proportions, material/colour/orientation, completeness, background, crop, and text constraints.
+
+
+## Structure state transfer
+
+Natural-language reasoning and code share current `PRODUCT_STATE.json`; they do not maintain separate semantic documents. AI interprets original multi-view evidence and proposes a state delta. Code validates evidence identity, prior-state hashes and dependencies, applies the delta, and derives task/review inputs. History remains for traceability and is not appended to generation prompts. This implements structure feedback only; the broader evidence-mode design remains a proposal.
+
+Distinguish **wrong candidate pixels** from **wrong/incomplete product interpretation**. A generation defect with correct source facts needs a rejected candidate and a focused replacement task, not a change to product truth. If the interpretation was incomplete, revise the corresponding lock from original evidence. If it remains uncertain, use `REVIEW_REQUIRED`; do not convert user rejection or an AI guess into a new confirmed fact. Code validates the transfer, not the meaning or visual accuracy.
+
+Use fine-grained, reusable structure locks for independent structures. Existing coarse locks conservatively invalidate all their dependants; AI may split them in a new task/plan revision. The updater can add locks but cannot infer a decomposition or reassign task dependencies. Never drop a required structure just to bypass a stale-state check.
+
+A lock may add `evidence_paths` and `relations`. Relations describe actual product parts and surfaces, not fixed page coordinates. Their vocabulary is product-derived; no product-specific part list is built into code. For example, inside a complete existing lock:
+
+```json
+{
+  "evidence_paths": ["input/01_product_evidence/actual-rear.jpg"],
+  "relations": [{
+    "relation_id": "inner-relief",
+    "subject": "observed recessed area",
+    "predicate": "belongs to the inner face of",
+    "object": "observed panel",
+    "views": ["back_3q"],
+    "evidence_paths": ["input/01_product_evidence/actual-rear.jpg"]
+  }]
+}
+```
+
+Use actual registered paths and view names. Omit `views` only when the relation applies to every task using the lock. AI must determine visibility/occlusion for the requested view; code only selects authored applicability. Evidence needed for applicable relations must be included in the current task's product references. A pose image cannot become authority for another product's structure.
+
+Propose a temporary JSON delta with `reason`, optional package-relative `source_report`, and `updates`. Each update contains `lock_id`, `expected_lock_sha256` and a complete `replacement` lock. Compute the prior-lock hash with `structure_state.value_hash` (canonical JSON); use null only for a new lock ID. Preserve existing fields, explicitly replace incorrect values, cite registered original `evidence_paths`, and choose `LOCKED` or `REVIEW_REQUIRED`. Supplied source reports must match registered candidate/contract bytes and contain an observed failure/uncertainty. Do not append old and contradictory facts to the replacement. The delta is command input, not another live state store.
+
+```text
+python3 scripts/revise_structure_state.py <package> --change <temporary-delta.json> --expected-state-sha <current-PRODUCT_STATE-file-SHA256>
+```
+
+The updater changes only current locks and a compact decision-log entry, increments the lockset version, and atomically replaces the state file after checking its expected hash. It does not rewrite source photos, approved plans, old contracts, candidates, QA reports or human decisions. `READY` at lockset level remains a record-level condition; individual unresolved locks block dependent tasks. Other writers still need ordinary serialized execution; this is not a multi-writer transaction service.
+
+Run set synchronization after applying a delta. It derives blocked children from actual required-lock contents/status, not merely the global version. Unchanged lock dependencies may continue under their original pinned contracts and QA; changed or unresolved dependencies require revised tasks. Reference/index changes still use the existing conservative source-change path. Approved affected plans need a new revision and current snapshot; do not patch their immutable files. Standalone drafts without candidates can compile current selected locks; natural-language analysis must also revise any conflicting task copy/layout/intent. Existing candidate contracts remain immutable.
+
+Current-view relations appear in focused generation/review packets. Final QA initialization adds `structure_observations` keyed by `lock_id:relation_id`, initially `NOT_REVIEWED`. For each required relation, inspect actual pixels against originals and record status plus a concrete natural-language `observation`. Missing, failed or uncertain relation observations prevent QA PASS even if the general topology check passes. Valid old reviews are invalidated when their selected structure dependencies change; scripts never auto-accept an image. Legacy contracts/reviews without relation data keep their prior fields; relations are activated through explicit state/task revisions.
+
+In web execution without scripts, apply the same current-state delta and dependent-task selection in existing records, keep version/evidence pointers, and report that code checks were not run. Do not substitute a growing conversation summary for updated product state.

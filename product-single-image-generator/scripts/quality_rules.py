@@ -1,5 +1,6 @@
 """Shared preflight and recorded visual-QA rules; these do not inspect pixels."""
 
+from structure_state import contract_state_errors, structure_requirements, observation_errors
 import hashlib
 import json
 import math
@@ -42,6 +43,7 @@ def design_execution(contract):
             "white balance, contrast/shadows and type-family range. Keep product colours; vary composition, scene and surfaces within that range."
         )
     return rules
+
 
 
 def digest(path):
@@ -282,6 +284,8 @@ def validate_quality(root, contract, index, locks):
             errors.append(f"{label}: state {state!r} has no observed-state evidence")
         return observed
 
+    for relation in structure_requirements(contract).values():
+        sources(relation.get("evidence_paths"), "structure relation")
     structures = quality.get("structure_checks")
     if not isinstance(structures, list):
         errors.append("structure_checks must be an array")
@@ -351,7 +355,8 @@ def compile_prompt(contract):
         *design_execution(contract),
         "Evidence roles (product truth overrides style/pose): " + json.dumps(contract["references"], ensure_ascii=False),
         "Style/previous-image guidance (never product truth): " + json.dumps({k: contract.get(k, []) for k in ("style_references", "prior_candidate_references", "visual_system")}, ensure_ascii=False),
-        "Locks/invariants: " + json.dumps({k: contract.get(k, []) for k in ("resolved_identity_locks", "required_lock_ids", "visual_invariants", "forbidden_changes")}, ensure_ascii=False),
+        "Locks/invariants: " + json.dumps({k: ([{field: value for field, value in lock.items() if field != "relations"} for lock in contract.get(k, [])] if k == "resolved_identity_locks" else contract.get(k, [])) for k in ("resolved_identity_locks", "required_lock_ids", "visual_invariants", "forbidden_changes")}, ensure_ascii=False),
+        *(["Current-view structure relations: " + json.dumps(structure_requirements(contract), ensure_ascii=False)] if structure_requirements(contract) else []),
         "Pose, layout, hardware state and operation: " + json.dumps(contract["quality_contract"], ensure_ascii=False),
         "Approved copy only: " + json.dumps(contract.get("copy", {}), ensure_ascii=False),
         "Output: " + json.dumps(contract["output_requirements"], ensure_ascii=False),
@@ -378,6 +383,7 @@ def focused_prompt(contract):
         "Selected design recipe": contract.get("design_recipe"),
         "Sellable object": contract.get("sellable_object"),
         "Product facts": [x["fact"] for x in contract.get("resolved_identity_locks", []) if x.get("fact")],
+        "Current-view structure relations": structure_requirements(contract),
         "Invariants": contract.get("visual_invariants"),
         "Forbidden changes": contract.get("forbidden_changes"),
         "Visual direction": contract.get("visual_system"),
@@ -397,7 +403,8 @@ def focused_prompt(contract):
 
 
 def qa_errors(root, contract, contract_path, candidate, report):
-    errors = []
+    errors = contract_state_errors(root, contract)
+    errors.extend(observation_errors(contract, report))
     try:
         actual = digest(file_at(root, candidate.get("path")))
     except (OSError, ValueError) as exc:
@@ -439,7 +446,7 @@ def review_status(root, contract, contract_path, candidate, report):
     """Read-only disposition of a saved review. No model call or acceptance write."""
     errors = qa_errors(root, contract, contract_path, candidate, report)
     invalid = (report.get("schema_version") != 2 or any(
-        error.startswith(("A+ code export:", "missing file:", "unsafe package path:")) or "stale" in error or "review_binding is invalid" in error for error in errors))
+        error.startswith(("A+ code export:", "missing file:", "unsafe package path:")) or "stale" in error or error.startswith("structure ") or "review_binding is invalid" in error for error in errors))
     result = {"execution": "INVALIDATED" if invalid else "REUSE", "status": "REVIEW_REQUIRED",
               "reason": "REVIEW_INPUTS_CHANGED" if invalid else "UNCHANGED_INPUT",
               "next_action": "REVIEW_CURRENT_IMAGE", "errors": errors}
@@ -459,9 +466,15 @@ def review_status(root, contract, contract_path, candidate, report):
     complete = all(isinstance(checks.get(key), dict) and checks[key].get("status") in {"PASS", "FAIL", "REVIEW_REQUIRED"}
                    and isinstance(checks[key].get("observation"), str) and checks[key]["observation"].strip()
                    for key in required_checks(contract))
+    relation_observations = report.get("structure_observations", {})
+    for key in structure_requirements(contract):
+        item = relation_observations.get(key, {}) if isinstance(relation_observations, dict) else {}
+        complete = complete and item.get("status") in {"PASS", "FAIL", "REVIEW_REQUIRED"} and bool(str(item.get("observation", "")).strip())
     if not complete:
         result.update(execution="REVIEW", reason="INCOMPLETE_REPORT", next_action="COMPLETE_CURRENT_REVIEW")
     elif any(isinstance(check, dict) and check.get("status") == "FAIL" for check in checks.values()) or any(error.startswith("QA composition FAIL:") for error in errors):
+        result.update(status="FAIL", next_action="CORRECT_OR_REPLAN_CURRENT_IMAGE")
+    elif any(isinstance(x, dict) and x.get("status") == "FAIL" for x in (relation_observations.values() if isinstance(relation_observations, dict) else [])):
         result.update(status="FAIL", next_action="CORRECT_OR_REPLAN_CURRENT_IMAGE")
     elif errors:
         result.update(next_action="RESOLVE_REVIEW_OR_REQUEST_HUMAN")

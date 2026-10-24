@@ -12,6 +12,7 @@ from set_common import SAFE_ID, load_contract, load_json, plan_modules, qa_error
 from quality_rules import focused_prompt, required_checks, review_status, validate_quality
 from a_plus_layout import design_handoff, image_membership, layout_summary
 from finalize_a_plus_image import export_errors
+from structure_state import dependency_errors, structure_requirements
 
 SCRIPTS = Path(__file__).resolve().parent
 SINGLE = SCRIPTS.parents[1] / "product-single-image-generator" / "scripts"
@@ -36,6 +37,9 @@ def progress(root, plan, state, product):
     for module in plan["modules"]:
         row = dict(saved.get(module["module_id"], {"module_id": module["module_id"], "status": "PLANNED"}))
         candidate = candidates.get(row.get("candidate_id"))
+        if row.get("status") == "BLOCKED":
+            rows.append({**row, "required": module.get("required", True)})
+            continue
         if candidate:
             if candidate.get("status") in {"PENDING_REVIEW", "HUMAN_STRUCTURE_REVIEW_PASSED"}:
                 row["status"] = "REVIEW_REQUIRED"
@@ -113,7 +117,7 @@ def check_sources(root, plan, state, product):
     snapshot = load_json(snapshot_path)
     if sha256(root / "index.json") != snapshot["reference_snapshot"]["index_sha256"]:
         raise ValueError("reference evidence changed; reconcile before continuing")
-    if product.get("identity_lockset", {}).get("status") != "READY" or product["identity_lockset"]["version"] != plan.get("approved_lockset_version"):
+    if product.get("identity_lockset", {}).get("status") != "READY":
         raise ValueError("product lockset changed")
 
 
@@ -177,6 +181,8 @@ def packet(root, plan, state, product, row, phase, max_images):
         if failures:
             raise ValueError("; ".join(failures))
         result.update({"candidate_path": str(image), "candidate_sha256": sha256(image), "checks": sorted(required_checks(contract)), "expected": {"product_facts": [x["fact"] for x in contract["resolved_identity_locks"]], "quality": contract["quality_contract"], "copy": contract.get("copy", {}), "output": contract["output_requirements"]}})
+        if structure_requirements(contract):
+            result["expected"]["structure_relations"] = structure_requirements(contract)
         if contract.get("image_intent"):
             result["expected"]["image_intent"] = contract["image_intent"]
         if contract.get("creative_brief"):
@@ -271,6 +277,10 @@ def main():
             check_sources(root, plan, state, product)
             path = resolve_file(root, row["contract_path"])
             contract = load_contract(root, path)
+            if not args.decision.startswith("REJECTED"):
+                failures = dependency_errors(product, contract.get("required_lock_ids"), contract.get("resolved_identity_locks"))
+                if failures:
+                    raise ValueError("; ".join(failures))
             image_relative = args.candidate_path or contract["output_path"]
             image = resolve_file(root, image_relative)
             if args.decision == "PENDING_REVIEW":

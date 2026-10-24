@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from structure_state import contract_state_errors
 import argparse
 import hashlib
 import json
@@ -175,6 +176,7 @@ def reuse_report(root: Path, state: dict, contract: dict, contract_path: Path, c
     return STATUS_EXIT.get(result.get("status"), 4)
 
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package", type=Path)
@@ -221,7 +223,7 @@ def main() -> int:
         print("Contract is not the active contract in PRODUCT_STATE.json")
         return 4
     lockset = state.get("identity_lockset", {})
-    if lockset.get("status") != "READY" or contract.get("identity_lockset_version") != lockset.get("version"):
+    if contract_state_errors(root, contract):
         print("Identity lockset is absent, stale, or inconsistent")
         return 4
 
