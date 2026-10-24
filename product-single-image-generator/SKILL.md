@@ -23,6 +23,12 @@ Choose the current task's [input-driven execution strategy](../product-image-pro
 
 Complete `image_intent`, shared `visual_system`, this image's `creative_brief` and relevant [quality fields](references/visual-quality.md). A blank scaffold or camera/product/text boxes are not a design. For raw mixed requirements, use the builder's [intake](../product-image-project-builder/references/automatic-intake.md).
 
+## Gallery: execute the resolved state
+
+For Gallery only, use the [Gallery state and design rules](../product-amazon-image-set-generator/references/amazon-planning.md#gallery). Initialization may leave a draft; the set planner must fill the actual design before this image is ready. Receive current facts, this image's required content/presentation, selected expression, shared visual boundaries and relevant evidence. Do not replay the source conversation or demand finished flat-lay/parameter/pose examples. Missing optional design references alone cannot block generation or force a mode change; AI completes unspecified design within either strategy.
+
+Preserve `image_intent.must_show` and the selected `creative_brief`. If genuine product facts required by a proposed view are missing, choose a supported treatment that fulfils the same responsibility and revise only the affected current design; do not silently drop a selling point, replace a parameter/range task with a hero, or invent dimensions/variants. Mandatory unresolved facts remain visible as gaps. Inspect actual pixels for required visual demonstrations, variant accuracy and parameter correspondence through existing content/role/design checks; lettering alone cannot satisfy an explicitly required demonstration. Gallery closing lifestyles have no added promotional copy. These additions do not change A+ behaviour.
+
 ## Generate from the assigned job
 
 Establish the sales task, buyer question, role and necessary proof first. Material needs readable texture; structure needs its actual interface; selection needs verified choices; operation needs evidenced states; lifestyle needs the assigned person/action/environment. Use `image_intent.module_role` for the task role. Existing `creative_brief.module_role` remains a fallback when the intent has no role; store an imported task's role once. Template constraints govern evidence and physical states; the brief governs visual expression.

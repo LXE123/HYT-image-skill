@@ -48,7 +48,7 @@ Resolve the same existing product package and its current evidence/locks. For a 
 python3 scripts/init_visual_set.py <package> --set-id <new-set-id> --deliverable a-plus
 ```
 
-This selects standard mode and A+ only, normally 13 independent images. Use `--count 9` through `--count 15` for the normal range. For both channels choose `--deliverable both`: each channel normally gets 13 images, not 13 combined. Explicit per-channel counts take precedence. If this set already exists, query `set_runtime.py ... next` instead of initializing again; saved scope/mode takes precedence over new defaults. Existing standalone/Gallery work stays in the same product package and keeps its own contracts and decisions.
+This selects standard mode and A+ only, normally 13 independent images. Use `--count 9` through `--count 15` for the normal range. For both channels choose `--deliverable both`: Gallery defaults to 9 images and A+ remains 13 (22 total). Explicit per-channel counts take precedence. If this set already exists, query `set_runtime.py ... next` instead of initializing again; saved scope/mode takes precedence over new defaults. Existing standalone/Gallery work stays in the same product package and keeps its own contracts and decisions.
 
 The initializer's legacy nine-image structural seed is below for interpreting its draft IDs. It is not the final page order, mandatory content list or image limit. Before approving a new draft, map its tasks to the skeleton above and adapt responsibilities, order and membership. Resume approved plans without silently upgrading or reordering them; use the existing revision rules for an intentional change.
 

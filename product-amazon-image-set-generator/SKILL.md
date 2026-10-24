@@ -1,6 +1,6 @@
 ---
 name: product-amazon-image-set-generator
-description: Plan and produce Amazon Gallery images, Premium A+ images, or both from an existing product package. Separate content groups from individual image tasks; normally 9-15 images per selected channel, usually 13. Use the single-image skill for one requested image.
+description: Plan and produce Amazon Gallery images, Premium A+ images, or both from an existing product package. Separate content groups from individual image tasks; Gallery defaults to 9 images; Premium A+ normally uses 13. Use the single-image skill for one requested image.
 ---
 
 # Amazon image sets
@@ -11,9 +11,9 @@ Activate supporting instructions according to the current task and information g
 
 ## 1. Resolve the requested work
 
-Use the user's instruction or saved scope: Gallery, A+, or both. Ask once only if an unqualified set request leaves this unresolved. An A+ example alone does not request A+ production. A standalone image goes to the single-image skill; an explicit pilot keeps its requested count.
+Use the user's instruction or saved scope: Gallery, A+, or both. Product initialization can precede this choice. Before set planning/generation, ask once whether the user wants Gallery, A+, or both only if the instruction and saved state leave scope unresolved; save and reuse the answer. An A+ example alone does not request A+ production. A standalone image goes to the single-image skill; an explicit pilot keeps its requested count.
 
-Normally plan 13 images per selected channel, adapting within 9–15 for meaningful coverage. Explicit counts/ranges take precedence; both normally means 13+13. Expanded mode (30–40 per channel, fallback 36) requires an explicit large-production request. New defaults never expand a saved queue.
+For Gallery, default to 9 images: two white product displays, three selling-point images, one flexible product display, and three lifestyles without promotional copy. Premium A+ retains its normal 13-image policy within 9–15. Explicit counts/ranges take precedence; both normally means 9+13. Expanded mode (30–40 per channel, fallback 36) requires an explicit large-production request. New defaults never expand a saved queue.
 
 For this department, A+ delivers only a code-exported 1464×600 PNG. Generate a suitable wide composition, retain the original and run the single-image [code export](../product-single-image-generator/references/state-and-contract.md#mandatory-a-code-export) before review; model-native pixels are not trusted as final dimensions. Matching ratios resize proportionally without cropping; mismatched ratios crop around required content and resize proportionally, without stretching or padding. Gallery uses its own canvas (square by default). Archive older/mobile canvas requirements without producing extra versions. Select the current delivery language from the task/market; archived translations do not request additional outputs. Deliver independent files for design-team assembly. Each may contain related panels, copy, graphics, comparisons or steps serving its assigned task.
 
@@ -23,7 +23,7 @@ New A+ contracts require source/crop QA before export. Use the packet's source-r
 
 ## 2. Turn responsibilities into an image plan
 
-**Content group ≠ output image.** Seven module descriptions are seven responsibilities, not seven photographs. Use [A+ grouping](references/a-plus-module-layout.md#page-skeleton-and-seven-responsibilities) when establishing/revising grouping: product introduction → core material/benefit → structure/craft → function/use → range/fit → lifestyle. Plan the explanation-rich upper section and the scene-led closing section before individual pictures; style varies within this skeleton. A complete saved ledger can be reused directly. The initializer's nine-image seed `1+1+2+2+1+1+1` is a draft to adapt to this flow before approval, not the final page order or required content list. Gallery uses [its own coverage](references/amazon-planning.md).
+**Content group ≠ output image.** Seven module descriptions are seven responsibilities, not seven photographs. Use [A+ grouping](references/a-plus-module-layout.md#page-skeleton-and-seven-responsibilities) when establishing/revising grouping: product introduction → core material/benefit → structure/craft → function/use → range/fit → lifestyle. Plan the explanation-rich upper section and the scene-led closing section before individual pictures; style varies within this skeleton. A complete saved ledger can be reused directly. The initializer's nine-image seed `1+1+2+2+1+1+1` is a draft to adapt to this flow before approval, not the final page order or required content list. Gallery uses [its own coverage and state handoff](references/amazon-planning.md#gallery). Its 2+3+1+3 framework fixes responsibilities, not composition: AI designs selling-point, parameter and style combinations from product evidence and the current brief; finished examples are optional.
 
 Use the builder's [automatic execution strategy](../product-image-project-builder/references/automatic-intake.md#automatic-execution-strategy) to record each child's `execution_policy`. A supplied design document and useful multi-view evidence favour ADVANCED; vague/sparse input calls for AI_ASSISTED to fill authorized creative gaps. Select through natural-language analysis, not file-count rules. Preserve required content and exact supplied copy in either mode. Evidence-insufficient children remain pending; supported children may continue without downgrading the entire set.
 

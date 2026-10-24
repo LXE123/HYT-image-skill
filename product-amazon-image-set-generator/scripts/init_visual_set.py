@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from set_common import MAX_CHANNEL_IMAGES, EXPANDED_MIN_IMAGES, NORMAL_TARGET_IMAGES, SAFE_ID, SOURCE_ROLES, default_modules, module_stub, load_contract, load_json, resolve_file, sha256, store_module_spec, update_product_summary, write_json
+from set_common import MAX_CHANNEL_IMAGES, EXPANDED_MIN_IMAGES, NORMAL_TARGET_IMAGES, GALLERY_TARGET_IMAGES, SAFE_ID, SOURCE_ROLES, default_modules, module_stub, load_contract, load_json, resolve_file, sha256, store_module_spec, update_product_summary, write_json
 from a_plus_layout import PROFILE_ID, profile_drafts
 from module_language import canonical_role
 
@@ -98,7 +98,7 @@ def main() -> int:
     parser.add_argument("--set-id", required=True)
     parser.add_argument("--marketplace", default="AMAZON_US")
     parser.add_argument("--deliverable", choices=("gallery", "a-plus", "both"), help="required scope unless explicit channel counts/profile already identify it")
-    parser.add_argument("--mode", choices=("standard", "expanded"), default="standard", help="standard: normally 9-15 per selected channel, target 13; expanded: explicit large-set request")
+    parser.add_argument("--mode", choices=("standard", "expanded"), default="standard", help="standard: Gallery defaults to 9, A+ to 13; expanded: explicit large-set request")
     parser.add_argument("--count", type=int, help="count per selected channel, not combined total")
     parser.add_argument("--gallery-count", type=int, help="explicit Gallery count; unselected channels get zero")
     parser.add_argument("--a-plus-count", type=int, help="explicit A+ image-task count, not page-module count")
@@ -139,7 +139,7 @@ def main() -> int:
         parser.error("explicit counts/profile conflict with --deliverable")
     fallback = args.count if args.count is not None else 36 if args.mode == "expanded" else NORMAL_TARGET_IMAGES
     if args.gallery_count is None:
-        args.gallery_count = fallback if selected_gallery else 0
+        args.gallery_count = (GALLERY_TARGET_IMAGES if args.count is None and args.mode == "standard" else fallback) if selected_gallery else 0
     if args.a_plus_count is None:
         args.a_plus_count = fallback if selected_a_plus else 0
     if selected_gallery and args.gallery_count == 0 or selected_a_plus and args.a_plus_count == 0:
@@ -310,7 +310,7 @@ def main() -> int:
         "status": "DRAFT",
         "generation_mode": args.mode,
         "deliverable": args.deliverable,
-        "quantity_policy": {"scope": "PER_CHANNEL", "normal_min": 9, "normal_max": 15, "target": NORMAL_TARGET_IMAGES,
+        "quantity_policy": {"scope": "PER_CHANNEL", "normal_min": 9, "normal_max": 15, "target": GALLERY_TARGET_IMAGES if args.deliverable == "gallery" else NORMAL_TARGET_IMAGES,
                             "selected_counts": {"AMAZON_GALLERY": args.gallery_count, "PREMIUM_A_PLUS": args.a_plus_count}},
         "creative_policy_version": 1,
         "design_policy_version": 1,

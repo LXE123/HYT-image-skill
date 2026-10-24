@@ -4,19 +4,16 @@ Read when filling a set plan. The versioned machine-readable catalog is [generat
 
 ## Default sequence and composition
 
-Choose Gallery, A+, or both from the user's instruction/context. Normal planning is 9–15 per selected channel, usually 13. A+ uses the [desktop structure](a-plus-module-layout.md) with 1464 × 600 outputs; Gallery uses its own main/secondary canvases. There is no automatic A+-only scope. Use the user's requested count/channel. The nine-role base sequence is a planning starting point, not a platform rule or a reason to invent unsupported features. Replace an unsupported module with a supported sales task or mark it blocked; never fabricate a mechanism to fill slot six.
+Choose Gallery, A+, or both from the user's instruction/context; ask once before set planning/generation if unresolved. Gallery defaults to nine images using [its 2+3+1+3 framework](amazon-planning.md#gallery). Premium A+ retains its normal 13 within 9–15 and its [desktop structure](a-plus-module-layout.md) with 1464 × 600 outputs. Explicit counts/channels and saved plans take precedence.
 
-| Gallery | Template | Concrete visual task | Required evidence and checks |
-|---|---|---|---|
-| 1 | `main_product` | Complete product centered on white; no copy or people | Sellable boundary/full silhouette; all visible connectors checked |
-| 2 | `product_overview` | Product proposition with task-specific image/copy relationships | Covered alternate view; no invented accessories |
-| 3 | `material_macro` | Real weave/surface closeup with recognizable context | Actual texture direction and scale; no fictional layers |
-| 4 | `hardware_static` | Signature detail in one evidenced assembled state | Local state evidence, required locks, routing/contact profile |
-| 5 | `hardware_static` | Connector/clasp construction from a different supported angle | Own interface evidence; do not repeat slot four without a distinct task |
-| 6 | `mechanism_steps` | Demonstrate only a proven adjustment/release motion | Start/end evidence and verified operating claim; otherwise replace with static task |
-| 7 | `size_fit` | Verified size/compatibility guidance with clean labels | Specs and claims for this SKU; no unsupported device |
-| 8 | `lifestyle_simple` | Assigned meaningful person/action/environment with naturally readable product | Anatomy ownership, contact/occlusion, visible hardware state |
-| 9 | `range_story` | Registered variants or single-product closing composition | Each variant's source; no invented colours |
+| Gallery seed | Template | Task |
+|---|---|---|
+| 01–02 | `main_product` | Two useful white product displays; no promotional lettering. |
+| 03–05 | `product_overview` initially | Three selling-point responsibilities; AI selects an appropriate template after deciding actual required content and expression. |
+| 06 | `product_overview` initially | Product display: style arrangement, verified parameters, wearing detail or a combination. Select `range_story` or `size_fit` only if that is the actual task. |
+| 07–09 | `lifestyle_simple` | Three distinct relevant people/activity/settings without promotional copy. |
+
+The seed deliberately does not require hardware, a mechanism, multiple variants or dimensions merely because of a position. Complete each draft from the current brief; switch template and relevant quality fields to match the actual design before approval. A neutral template never waives visible-hardware or motion checks. Keep mandatory content in `image_intent.must_show` and selected expression/success criteria in `creative_brief`; follow the Gallery guide for coverage and optional references. A missing layout/pose example is not a product-evidence gap. Explicit non-nine counts need AI redistribution rather than accepting a truncated seed as a finished plan.
 
 Generic Premium A+ templates map to overview, material, static signature, static construction, simple lifestyle, mechanism, size, simple lifestyle, range. The selected [department A+ profile](a-plus-module-layout.md) selects its own templates per image and uses exact 1464 × 600 output instead. Choose composition by content task. Selling-point images may use approved copy, icons, comparisons and related detail regions; verified use images may have several steps; full lifestyles need recognizable people/actions/environments. Separate-file delivery is not a blanket ban on copy or internal panels. Do not force all images into a left-copy/right-product layout. Redesign the scene for the wide canvas; do not stretch a square image or reuse a crop that hides the product. Aspect ratios remain user-adjustable.
 

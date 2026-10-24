@@ -56,6 +56,7 @@ EXPANDED_MIN_IMAGES = 30
 NORMAL_MIN_IMAGES = 9
 NORMAL_MAX_IMAGES = 15
 NORMAL_TARGET_IMAGES = 13
+GALLERY_TARGET_IMAGES = 9
 
 
 def generation_mode_errors(plan: dict) -> list[str]:
@@ -151,14 +152,14 @@ def update_product_summary(product_state: dict, set_state: dict) -> None:
 def default_modules(gallery_count: int, a_plus_count: int) -> list[dict]:
     gallery_tasks = [
         ("Main image", "What exactly is being sold?", "front_3q", "white"),
-        ("Product overview", "What does the complete product look like?", "alternate_full", "as_planned"),
-        ("Material proof", "What does the material and surface look like?", "material_macro", "as_planned"),
-        ("Signature detail", "What makes this product distinctive?", "detail", "as_planned"),
-        ("Construction", "How are the hardware and edges finished?", "construction_detail", "as_planned"),
-        ("Installation or adjustment", "How is it installed or adjusted?", "use_detail", "as_planned"),
-        ("Compatibility and fit", "Will it fit the intended device or use?", "compatibility", "as_planned"),
+        ("Alternate white display", "Which other product features matter?", "alternate_full", "white"),
+        ("Primary selling point", "What is the main purchase reason?", "as_planned", "as_planned"),
+        ("Supporting benefit", "Which additional benefit matters?", "as_planned", "as_planned"),
+        ("Further benefit", "Which remaining requirements need explanation?", "as_planned", "as_planned"),
+        ("Product display", "Which styles or specifications help selection?", "as_planned", "as_planned"),
         ("Primary lifestyle", "How does it fit the primary customer's life?", "lifestyle_primary", "as_planned"),
-        ("Secondary lifestyle or range", "What additional style or gifting value does it offer?", "lifestyle_secondary", "as_planned"),
+        ("Distinct lifestyle", "Which different activity adds wearing context?", "lifestyle_secondary", "as_planned"),
+        ("Closing lifestyle", "Which further context completes the set?", "lifestyle_closing", "as_planned"),
     ]
     a_plus_tasks = [
         ("Brand and product hero", "What is the product's overall promise?", "brand_hero"),
@@ -186,7 +187,8 @@ def default_modules(gallery_count: int, a_plus_count: int) -> list[dict]:
             modules.append(module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", "as_planned", template_id=template_id))
             continue
         task, question, view, background = gallery_tasks[min(sequence - 1, len(gallery_tasks) - 1)]
-        modules.append(module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", background))
+        template_id = "main_product" if sequence <= 2 else "product_overview" if sequence <= 6 else "lifestyle_simple"
+        modules.append(module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", background, template_id=template_id))
     for sequence in range(1, a_plus_count + 1):
         task, question, view = a_plus_tasks[min(sequence - 1, len(a_plus_tasks) - 1)]
         item = module_stub(f"a-plus-{sequence:02d}", "PREMIUM_A_PLUS", sequence, task, question, view, "1464:600", "as_planned")
