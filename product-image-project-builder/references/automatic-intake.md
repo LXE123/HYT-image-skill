@@ -82,3 +82,39 @@ python3 scripts/export_design_brief.py /absolute/path/intake.json --output /abso
 反馈如“第 3 张扣具不对”“第 5 张太乱”时，先从任务清单定位 ID。复用产品证据、共同视觉规则和这张的职责，AI 自行选择纠正手法；不要重新确认全套方案。布局/文字问题处理当前图，结构错误回到原始证据重新生成。每张保留原候选，沿用一次初稿加最多两次修正；到限后交付现状并指出所缺资料，不无限重试。改变固定构图或文案需自动建立受影响任务的新修订，不偷改已冻结记录；未受影响图片继续保留。
 
 真实测试记录：用户输入/续发/确认次数及原因、从输入到出图的等待、各模块是否独立完成、需要纠正的图片与轮次、最终实际反馈。足够资料的已授权任务，以不额外确认即可交付候选为目标；不要把未知事实留到出图后再编造。结构/文案/审美分别记，不用脚本通过替代实图测试。每次实测只改出现问题的环节，避免增加一轮新的必经确认。
+
+
+## Automatic execution strategy
+
+AI selects a working strategy from the actual input, then records it on the current image task as `execution_policy`. This is natural-language conditional reasoning, not a code hierarchy, photo-count threshold or another conversation-summary document. Separate this strategy from `PHOTO_EVIDENCE` / `MODEL_ASSISTED` source types and from standard/expanded image quantities. It also does not implement the separate proposed PRECISION/EVIDENCE_SCOPED evidence-mode design.
+
+- **ADVANCED / 高级执行**: requirements are clear and the current task has sufficient relevant evidence. Carry out the supplied roles, exact wording, selection/use information and image relationships faithfully. AI chooses unspecified design details within those boundaries. More files do not justify this mode if they are unclear, redundant or unrelated.
+- **AI_ASSISTED / AI 辅助补全**: requirements or useful input are incomplete. AI actively proposes the missing planning, composition, style, scenes and authorized copy, using the supported product identity. Distinguish proposals from confirmed facts; record uncertain product interpretations in gaps rather than production facts. Do not fill missing structure, dimensions, material, performance or operating states with invented evidence.
+
+Choose automatically within the authorized task; do not ask the user to select a mode or approve routine design choices. Assess actual image coverage/clarity and requirement completeness, not 6 versus 16 uploads. A rich design-department package normally supports ADVANCED, while sparse/vague input normally calls for AI_ASSISTED; these are examples, not automatic rules. A clear requirement document can coexist with missing structural evidence. Preserve that requirement, mark only its affected task pending, and continue supported tasks.
+
+First identify which document clauses are requirements and which are suggestions, and each image's evidence/pose/style/old-output role. Preserve provided copy exactly unless an actual rewrite/translation authorization exists. AI_ASSISTED adds to unspecified creative areas; it cannot replace a required installation task with an unrelated beauty shot. Unsupported supplied claims stay visible as gaps; the source document alone does not prove their truth.
+
+Keep the input assessment in the existing module/spec, or in a standalone contract. A chosen decision has:
+
+```json
+{
+  "execution_policy": {
+    "mode": "AI_ASSISTED",
+    "reason": "The current task has adequate identity evidence but no supplied scene or image copy; those creative choices were delegated.",
+    "requirements": "PARTIAL",
+    "evidence": "SUFFICIENT",
+    "readiness": "READY",
+    "allowed_completion": ["scene", "composition", "copy"],
+    "copy_origin": "AI_PROPOSED"
+  }
+}
+```
+
+The reason must describe the current input and task. `requirements` is CLEAR/PARTIAL/UNSPECIFIED; `evidence` is SUFFICIENT/PARTIAL/INSUFFICIENT for the requested task; `readiness` is READY/NEEDS_EVIDENCE/REPLAN. Optional `minimum_mode: ADVANCED` preserves an explicit user minimum: keep it pending when conditions are missing instead of downgrading. `copy_origin: PROVIDED` prevents adding copy to `allowed_completion` unless actual rewrite authority is recorded as `copy_rewrite_authorized: true`. Other completion areas are planning/composition/style/scene. These fields select a strategy and boundary, not a visual-accuracy certificate.
+
+Mode and readiness are separate. AI_ASSISTED may be READY for supported appearance with AI-planned styling, but not for a required unseen mechanism. ADVANCED with an explicit minimum can remain NEEDS_EVIDENCE until its conditions are met. Neither mode bypasses current evidence, structure locks, claims, crop/QA or human-decision requirements. Unclear identity remains intake/planning work under the existing evidence rules.
+
+New script-generated tasks start UNRESOLVED: AI must fill their input assessment before approval/preflight. Exported/imported image tasks preserve a supplied `execution_policy`; omitted decisions still need analysis. Scripts validate the decision's consistency, forward the selected strategy into generation and review state, and block non-READY tasks. They do not inspect photos to select the mode. Individual tasks in one set may use different modes.
+
+When the user supplies clearer requirements/photos, reassess only affected tasks. Update unproduced drafts; use existing revisions for approved tasks or candidate-bound contracts. Keep old decisions/reviews pinned to their inputs. A new mode does not clear a failure, reset retries or upgrade historical acceptance. Web execution follows the same assessment in existing task records without claiming code was run.

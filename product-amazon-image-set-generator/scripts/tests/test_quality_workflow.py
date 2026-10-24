@@ -48,6 +48,7 @@ class QualityWorkflowTest(unittest.TestCase):
         }
         write_json(self.root / "PRODUCT_STATE.json", self.state)
         self.module = module_stub("gallery-01", "AMAZON_GALLERY", 1, "Accurate object", "What is included?", "front_3q", "1:1", "white")
+        self.module["execution_policy"] = {'mode': 'ADVANCED', 'reason': 'Synthetic task has clear requirements and registered coverage', 'requirements': 'CLEAR', 'evidence': 'SUFFICIENT', 'readiness': 'READY', 'allowed_completion': ['composition']}
         self.module["creative_brief"] = {
             "layout_id": "main_clean", "story_stage": "single_message",
             "visual_concept": "Recognize the complete sellable silhouette immediately",
@@ -243,6 +244,7 @@ class QualityWorkflowTest(unittest.TestCase):
         relative = "runs/single/front_3q_generation_contract.json"
         path = self.root / relative
         contract = json.loads(path.read_text())
+        contract["execution_policy"] = copy.deepcopy(self.module["execution_policy"])
         contract.update({"identity_lockset_version": 1, "required_lock_ids": ["shape"], "references": self.module["product_references"], "generation_template": self.module["generation_template"], "quality_contract": self.module["quality_contract"]})
         contract.update({"image_intent": {"sales_task": "Identify the complete sellable product", "buyer_question": "What is included?"}, "creative_brief": copy.deepcopy(self.module["creative_brief"]), "visual_system": {"direction": "Accurate white-background main image", "lighting": "Controlled highlights reveal the actual surface", "typography": "No added lettering"}})
         write_json(path, contract)
@@ -262,6 +264,7 @@ class QualityWorkflowTest(unittest.TestCase):
         relative = "runs/no-design/front_3q_generation_contract.json"
         path = self.root / relative
         contract = json.loads(path.read_text())
+        contract["execution_policy"] = copy.deepcopy(self.module["execution_policy"])
         contract.update({"identity_lockset_version": 1, "required_lock_ids": ["shape"], "references": self.module["product_references"], "generation_template": self.module["generation_template"], "quality_contract": self.module["quality_contract"]})
         del contract["creative_brief"]
         write_json(path, contract)

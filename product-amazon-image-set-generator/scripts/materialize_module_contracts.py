@@ -10,6 +10,7 @@ from pathlib import Path
 from set_common import SAFE_ID, compile_prompt, load_json, module_quality_errors, plan_modules, resolve_file, sha256, update_product_summary, write_json
 from design_store import resolve_design
 from structure_state import dependency_errors
+from execution_policy import policy_errors
 
 
 STYLE_SCOPE = {
@@ -86,6 +87,7 @@ def main() -> int:
             except (OSError, ValueError, KeyError, TypeError) as error:
                 parser.error(str(error))
         quality_errors = module_quality_errors(root, module, package_index, locks)
+        quality_errors.extend(policy_errors(module, generation=True))
         if quality_errors:
             parser.error(f"module {module['module_id']} needs a revised plan: {'; '.join(quality_errors)}")
     source_map = {
@@ -183,6 +185,8 @@ def main() -> int:
                 "plan_sha256": current_plan_hash,
             },
         }
+        if "execution_policy" in module:
+            contract["execution_policy"] = module["execution_policy"]
         if plan.get("creative_policy_version") == 1:
             contract["creative_brief"] = module.get("creative_brief")
         if plan.get("design_policy_version"):

@@ -6,6 +6,7 @@ import json
 import math
 from pathlib import PurePosixPath
 from finalize_a_plus_image import export_errors
+from execution_policy import policy_errors, generation_guidance
 
 
 BASE_CHECKS = {"product_identity", "structure_topology", "human_presence", "copy_claims", "layout_output"}
@@ -56,6 +57,8 @@ def review_binding(root, contract, image_hash, comparison_images=()):
             "required_lock_ids", "visual_invariants", "forbidden_changes", "copy", "image_intent",
             "module_language", "creative_brief", "visual_system", "design_recipe", "output_requirements",
             "claim_ids", "claim_decisions", "sellable_object", "identity_lockset_version")
+    if "execution_policy" in contract:
+        keys = (*keys, "execution_policy")
     refs = [*contract.get("references", []), *contract.get("style_references", []),
             *contract.get("prior_candidate_references", []), *comparison_images]
     paths = {ref["path"] for ref in refs}
@@ -190,7 +193,7 @@ def required_checks(contract):
 
 
 def validate_quality(root, contract, index, locks):
-    errors = []
+    errors = policy_errors(contract)
     output = contract.get("output_requirements", {})
     if isinstance(output, dict) and output.get("pre_crop_review") not in (None, "OBSERVED_LAYOUT_V1"):
         errors.append("unsupported pre_crop_review method")
@@ -353,6 +356,7 @@ def compile_prompt(contract):
         *(["Creative direction: " + json.dumps(contract["creative_brief"], ensure_ascii=False)] if contract.get("creative_brief") else []),
         *(["Selected design recipe: " + json.dumps(contract["design_recipe"], ensure_ascii=False)] if contract.get("design_recipe") else []),
         *design_execution(contract),
+        *generation_guidance(contract),
         "Evidence roles (product truth overrides style/pose): " + json.dumps(contract["references"], ensure_ascii=False),
         "Style/previous-image guidance (never product truth): " + json.dumps({k: contract.get(k, []) for k in ("style_references", "prior_candidate_references", "visual_system")}, ensure_ascii=False),
         "Locks/invariants: " + json.dumps({k: ([{field: value for field, value in lock.items() if field != "relations"} for lock in contract.get(k, [])] if k == "resolved_identity_locks" else contract.get(k, [])) for k in ("resolved_identity_locks", "required_lock_ids", "visual_invariants", "forbidden_changes")}, ensure_ascii=False),
@@ -375,6 +379,7 @@ def focused_prompt(contract):
         "View: " + contract["target_view"],
         "Template: " + " ".join(contract["generation_template"]["prompt_rules"]),
         *design_execution(contract),
+        *generation_guidance(contract),
     ]
     payloads = {
         "Image purpose": contract.get("image_intent"),
@@ -404,6 +409,7 @@ def focused_prompt(contract):
 
 def qa_errors(root, contract, contract_path, candidate, report):
     errors = contract_state_errors(root, contract)
+    errors.extend(policy_errors(contract, generation=True))
     errors.extend(observation_errors(contract, report))
     try:
         actual = digest(file_at(root, candidate.get("path")))

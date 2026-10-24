@@ -8,6 +8,7 @@ from pathlib import Path
 from quality_rules import compile_prompt, file_at, validate_quality
 from module_language import resolve_module_language
 from structure_state import dependency_errors
+from execution_policy import policy_errors
 
 
 def main():
@@ -35,6 +36,7 @@ def main():
         if contract.get("module_language_policy_version") == 1:
             contract["module_language"] = resolve_module_language(contract)
         errors = validate_quality(root, contract, index, locks)
+        errors.extend(policy_errors(contract, generation=True))
         if errors:
             raise ValueError("; ".join(errors))
         contract["resolved_identity_locks"] = [locks[x] for x in contract["required_lock_ids"]]

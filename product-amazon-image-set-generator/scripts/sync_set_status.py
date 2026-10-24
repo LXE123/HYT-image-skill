@@ -11,6 +11,7 @@ from set_common import SAFE_ID, compile_prompt, load_contract, load_json, plan_m
 
 
 from structure_state import dependency_errors
+from execution_policy import policy_errors
 
 
 def main() -> int:
@@ -125,6 +126,7 @@ def main() -> int:
                 ids = spec["required_lock_ids"]
                 old = {x["lock_id"]: x for x in snapshot["identity_lockset"]["locks"]}
                 failures = dependency_errors(product_state, ids, [old[x] for x in ids if x in old])
+                failures.extend(policy_errors(spec, generation=True))
             except (OSError, ValueError, KeyError) as error:
                 failures = [str(error)]
             if failures:

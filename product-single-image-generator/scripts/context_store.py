@@ -62,7 +62,7 @@ def load_contract(root, path):
     raw = read_json(path)
     if raw.get("storage_mode") != "REFERENCED":
         return raw
-    forbidden = {"generation_template", "quality_contract", "generation_prompt", "resolved_identity_locks", "references", "visual_system", "copy"}
+    forbidden = {"generation_template", "quality_contract", "generation_prompt", "resolved_identity_locks", "references", "visual_system", "copy", "execution_policy"}
     if forbidden.intersection(raw):
         raise ValueError("referenced contract contains duplicated context fields")
     bindings = raw.get("bindings", {})
@@ -112,6 +112,8 @@ def load_contract(root, path):
                 intent["content_group_id"] = page["page_module_id"]
                 break
         contract["image_intent"] = intent
+    if "execution_policy" in module:
+        contract["execution_policy"] = module["execution_policy"]
     if plan.get("creative_policy_version") == 1:
         contract["creative_brief"] = module.get("creative_brief")
     if plan.get("design_policy_version"):

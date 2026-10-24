@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import hashlib
 import json
 import re
@@ -54,6 +55,8 @@ def brief_drafts(brief, index):
         question = source["buyer_question"]
         item = module_stub(image_id, channel, sequence, source.get("sales_task", question), question, image_id,
                            f"{width}:{height}", "as_planned", template_id=templates.get(role, "product_overview"))
+        if "execution_policy" in source:
+            item["execution_policy"] = deepcopy(source["execution_policy"])
         item["image_intent"] = {"module_role": role, "must_show": source["must_show"]}
         required = source.get("required_fact_ids", [])
         dependencies = [*required, *(fact_id for line in source.get("copy", []) for fact_id in line.get("required_fact_ids", []))]

@@ -8,6 +8,7 @@ Original assets/provenance remain in the intake archive, outside this packet.
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import json
 from pathlib import Path
 
@@ -45,6 +46,10 @@ def compile_responsibilities(intake, items, id_key, clean_job, available):
         seen.add(identity)
         required = strings(item.get("required_fact_ids", []), "required_fact_ids")
         entry = {id_key: identity, **{key: text(item.get(key), key) for key in ("role", "buyer_question")}}
+        if "execution_policy" in item:
+            if not isinstance(item["execution_policy"], dict):
+                raise ValueError("execution_policy must be an input-assessment object")
+            entry["execution_policy"] = deepcopy(item["execution_policy"])
         if "sales_task" in item:
             entry["sales_task"] = text(item["sales_task"], "sales_task")
         if id_key == "image_id" and "content_group_id" in item:

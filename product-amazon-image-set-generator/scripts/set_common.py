@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
 from quality_rules import compile_prompt, file_at, qa_errors, validate_quality
 from context_store import MODULE_KEYS, load_contract, plan_modules
+from execution_policy import draft_policy
 
 
 def generation_templates() -> dict:
@@ -237,6 +238,7 @@ def module_stub(module_id: str, channel: str, sequence: int, task: str, question
             "visible_hardware": [],
             "mechanism": {"depicted": template["requires_mechanism"], "action": "", "structure_id": "", "start_state": "", "end_state": "", "evidence_paths": [], "verified_claim_ids": []},
         },
+        "execution_policy": draft_policy(),
         "visual_invariants": [],
         "forbidden_changes": [],
         "copy": {"title": "", "subtitle": "", "labels": []},

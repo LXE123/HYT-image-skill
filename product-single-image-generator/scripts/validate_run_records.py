@@ -2,6 +2,7 @@
 """Validate a product run contract and advance the active workflow after preflight."""
 
 from structure_state import dependency_errors
+from execution_policy import policy_errors
 import argparse
 import json
 from pathlib import Path, PurePosixPath
@@ -99,6 +100,7 @@ def main() -> int:
     if not any(isinstance(item, dict) and item.get("run_id") == run_id for item in runs):
         errors.append("合同 run_id 未登记在 PRODUCT_STATE.json 的 runs 中")
     if args.ready_for_generation:
+        errors.extend(policy_errors(contract, generation=True))
         if isinstance(output, str) and (root / output).is_file():
             errors.append("生成前检查拒绝已存在的合同候选图；请继续审核或创建新合同")
         candidate_id = contract.get("candidate_id") or f"{run_id}-{contract.get('target_view')}"

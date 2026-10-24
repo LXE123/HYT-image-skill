@@ -7,6 +7,9 @@ import re
 from pathlib import Path
 
 
+from execution_policy import draft_policy
+
+
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 
@@ -109,6 +112,7 @@ def main() -> int:
                 "success_criteria": [],
             },
             "quality_contract": {"version": 1, "layout": {}, "human": {"present": False}, "visible_hardware": [], "structure_checks": [], "mechanism": {"depicted": False}},
+            "execution_policy": draft_policy(),
             "visual_invariants": [],
             "forbidden_changes": [],
             "output_requirements": {"format": args.format, "background": args.background},

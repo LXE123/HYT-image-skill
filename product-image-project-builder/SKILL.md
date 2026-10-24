@@ -11,6 +11,8 @@ Own product evidence, provenance, sellable scope and gaps. The single-image skil
 
 Inspect actual uploaded images, classify source roles and preserve originals. For mixed requirements or redesigns that still need analysis, read [automatic intake](references/automatic-intake.md): separate facts, content responsibilities, delivery constraints, exact copy and old visual suggestions; export only current production requirements. Preserve supplied copy in its original language and wording unless translation/rewrite was authorized.
 
+Select [ADVANCED or AI_ASSISTED](references/automatic-intake.md#automatic-execution-strategy) automatically from requirement clarity and actual evidence for the task, never upload count. ADVANCED executes clear supplied requirements; AI_ASSISTED proactively fills authorized creative gaps while preserving provided requirements and product truth. Record the decision in the current task, separately from readiness and evidence source type; insufficient critical evidence still leaves that task pending.
+
 Keep content groups separate from image tasks. Seven A+ module descriptions do not establish seven files. Preserve supplied job scope/count; leave an unspecified full-set count for the set planner to resolve; source groups use `content_groups`, actual children use `modules` and `content_group_id`. The set planner splits groups into meaningful child tasks before generation. The set planner normally chooses 13 for full A+; user counts/ranges and single/pilot scope take precedence. Design choices are AI proposals; they are not product facts.
 
 Choose evidence mode from the actual inputs:

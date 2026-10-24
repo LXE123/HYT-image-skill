@@ -19,6 +19,8 @@ python3 scripts/compile_generation_prompt.py <package> --contract <relative-cont
 python3 scripts/validate_run_records.py <package> --contract <relative-contract> --ready-for-generation
 ```
 
+Choose the current task's [input-driven execution strategy](../product-image-project-builder/references/automatic-intake.md#automatic-execution-strategy) before compilation. Fill its `execution_policy` from actual inputs: ADVANCED for clear requirements with sufficient evidence, AI_ASSISTED for proactive completion of unspecified creative choices. New drafts start UNRESOLVED. Mode changes never waive structure evidence, supplied copy, retry limits or visual checks. Reuse an unchanged pinned decision; reassess affected tasks when inputs change.
+
 Complete `image_intent`, shared `visual_system`, this image's `creative_brief` and relevant [quality fields](references/visual-quality.md). A blank scaffold or camera/product/text boxes are not a design. For raw mixed requirements, use the builder's [intake](../product-image-project-builder/references/automatic-intake.md).
 
 ## Generate from the assigned job

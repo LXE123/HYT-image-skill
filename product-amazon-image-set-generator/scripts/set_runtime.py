@@ -13,6 +13,7 @@ from quality_rules import focused_prompt, required_checks, review_status, valida
 from a_plus_layout import design_handoff, image_membership, layout_summary
 from finalize_a_plus_image import export_errors
 from structure_state import dependency_errors, structure_requirements
+from execution_policy import policy_errors
 
 SCRIPTS = Path(__file__).resolve().parent
 SINGLE = SCRIPTS.parents[1] / "product-single-image-generator" / "scripts"
@@ -128,6 +129,7 @@ def packet(root, plan, state, product, row, phase, max_images):
     index = load_json(root / "index.json")
     locks = {x["lock_id"]: x for x in product["identity_lockset"]["locks"]}
     failures = validate_quality(root, contract, index, locks)
+    failures.extend(policy_errors(contract, generation=True))
     if failures:
         raise ValueError("; ".join(failures))
     if contract.get("resolved_identity_locks") != [locks[x] for x in contract["required_lock_ids"]]:
@@ -146,6 +148,8 @@ def packet(root, plan, state, product, row, phase, max_images):
     if len(refs) > max_images:
         raise ValueError(f"packet has {len(refs)} reference files (limit {max_images}); narrow optional references or explicitly increase --max-images; none were dropped")
     result = {"module_id": row["module_id"], "phase": phase, "candidate_id": contract["candidate_id"], "contract_path": row["contract_path"], "contract_sha256": sha256(path), "attempt": row.get("attempt", 1), "references": refs}
+    if "execution_policy" in contract:
+        result["execution_mode"] = contract["execution_policy"]["mode"]
     membership = image_membership(plan, row["module_id"])
     if membership:
         result["page"] = membership

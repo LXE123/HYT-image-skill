@@ -88,6 +88,7 @@ class APlusLayoutTest(unittest.TestCase):
                                        "retouching": "preserve identity", "forbidden_cues": ["invented components"]}})
         for row in plan["modules"]:
             spec = load_json(self.root / row["spec_path"])
+            spec["execution_policy"] = {'mode': 'ADVANCED', 'reason': 'Synthetic task has clear requirements and registered coverage', 'requirements': 'CLEAR', 'evidence': 'SUFFICIENT', 'readiness': 'READY', 'allowed_completion': ['composition']}
             spec["product_references"] = [{"path": "input/own-product.png", "role": "PRODUCT_EVIDENCE", "usage_scope": "PRODUCT_IDENTITY_ONLY"}]
             spec["required_lock_ids"] = ["identity"]
             quality = spec["quality_contract"]
