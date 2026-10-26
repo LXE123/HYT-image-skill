@@ -20,6 +20,14 @@ New sets use these ownership boundaries:
 
 Shared facts are stored once. Files are resolved and hash-checked by code. No extra “conversation summary” document is generated per image. Generation input omits QA fields, statuses, hashes and unselected modules. Review input omits prior prompts and unrelated reviews. Neither packet is a new source of product truth.
 
+## Gallery opening pair and later design
+
+For a new full Gallery set, follow the [opening-pair inspection](amazon-planning.md#opening-pair-inspect-first-inherit-identity-rather-than-pose). The agent selects the existing first two white-display IDs with `prepare --module-id`, executes them through the single-image workflow, and inspects both against originals before dependent later generation. Runtime `next-generation` does not itself perform or certify this visual checkpoint. Resume saved candidates/QA rather than regenerating a pair after interruption.
+
+The opening pair's upright default lives in each child's layout/brief, never in the shared identity lockset. Later children inherit only supported product facts and relevant original evidence; multi-style pose/arrangement remains free. Save the selected arrangement in that child's brief, with mandatory choices/parameters in its intent. Reuse current state, not the front image's prompt or a chronological error log.
+
+For joint inspection, declare the other actual candidate with `--comparison-image` before recording observations. A valid assistant report may support proceeding with originals/current state while candidates remain pending human review; it does not authorize `ACCEPTED` or an ineligible `prior_candidate_id`. Eligible prior images still have limited reviewed appearance scope. If real approval later permits using the opening pair as upstream references, pin them through an explicit affected-task revision/snapshot; never mutate an already approved snapshot in place. Evidence-backed product corrections likewise use the existing structure-state interface and dependent-task revision. Do not create a parallel baseline record, acceptance shortcut or extra mandatory human checkpoint. A+ retains its own execution policy.
+
 ## Production loop
 
 All commands below run from this skill's directory and take the existing package path. Use one serial writer per product package; these scripts are not a multi-worker job scheduler.

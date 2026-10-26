@@ -6,6 +6,7 @@ import unittest
 import test_a_plus_layout as fixtures
 import test_intake_handoff as intake_fixtures
 from set_common import default_modules, load_json, plan_modules, write_json
+from quality_rules import compile_prompt
 
 
 class GalleryFrameworkTest(unittest.TestCase):
@@ -36,6 +37,33 @@ class GalleryFrameworkTest(unittest.TestCase):
             plan = load_json(f.root / f'visual_sets/{name}/SET_PLAN.json')
             self.assertEqual(tuple(sum(m['channel'] == c for m in plan['modules'])
                                    for c in ('AMAZON_GALLERY', 'PREMIUM_A_PLUS')), expected)
+
+    def test_upright_pose_is_local_to_opening_pair_and_reaches_both_prompt_formats(self):
+        modules = default_modules(9, 13)
+        for i, module in enumerate(modules):
+            composition = module['quality_contract']['layout']['composition']
+            if i < 2:
+                self.assertIn('standing upright', composition)
+                self.assertIn('front view' if i == 0 else 'reverse view', composition)
+                for prompt_format in (None, 'focused-v1'):
+                    contract = {**module, 'references': [], 'prompt_format': prompt_format}
+                    self.assertIn(composition, compile_prompt(contract))
+            else:
+                self.assertNotIn('standing upright', composition)
+            # A pose must not be stored as an inherited product-identity rule.
+            self.assertEqual(module['visual_invariants'], [])
+            self.assertEqual(module['forbidden_changes'], [])
+
+    def test_current_pose_override_and_free_display_layout_are_preserved(self):
+        modules = default_modules(9, 0)
+        for module, pose in ((modules[0], 'Explicitly requested flat-lay front display'),
+                             (modules[5], 'Flat-lay colour comparison with all required variants')):
+            module['quality_contract']['layout']['composition'] = pose
+            contract = {**module, 'references': [], 'prompt_format': 'focused-v1'}
+            prompt = compile_prompt(contract)
+            self.assertIn(pose, prompt)
+            self.assertNotIn('standing upright', prompt)
+            self.assertFalse(module['generation_template']['requires_mechanism'])
 
     def test_parameters_and_current_presentation_reach_prompt_without_design_examples(self):
         f = self.fixture()

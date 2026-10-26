@@ -188,7 +188,15 @@ def default_modules(gallery_count: int, a_plus_count: int) -> list[dict]:
             continue
         task, question, view, background = gallery_tasks[min(sequence - 1, len(gallery_tasks) - 1)]
         template_id = "main_product" if sequence <= 2 else "product_overview" if sequence <= 6 else "lifestyle_simple"
-        modules.append(module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", background, template_id=template_id))
+        item = module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", background, template_id=template_id)
+        if sequence <= 2:
+            facing = "front" if sequence == 1 else "reverse"
+            item["quality_contract"]["layout"]["composition"] = (
+                f"Complete product standing upright on white, {facing} view; no copy. "
+                "Keep the evidenced assembled shape; not laid flat or spread open. "
+                "An explicit requested pose overrides this draft default."
+            )
+        modules.append(item)
     for sequence in range(1, a_plus_count + 1):
         task, question, view = a_plus_tasks[min(sequence - 1, len(a_plus_tasks) - 1)]
         item = module_stub(f"a-plus-{sequence:02d}", "PREMIUM_A_PLUS", sequence, task, question, view, "1464:600", "as_planned")

@@ -50,6 +50,10 @@ Record the decision in the existing `creative_brief` (visual device, graphic tre
 
 Constrain product identity, evidence, required information, exact copy, scope and the A+ canvas of 1464×600. Let AI choose composition, suitable scenes, visual devices and information density; lighting and typography vary within the selected shared range. Choose integrated generation or separate typesetting using the single-image [text execution criteria](../../product-single-image-generator/references/art-direction.md#文字生成与单独排字); neither is a mandatory extra stage. A separate text pass must preserve the product image and receive the final copy without turning it into new scene instructions.
 
+## Gallery pose scope and multi-style freedom
+
+The [Gallery opening pair](amazon-planning.md#opening-pair-inspect-first-inherit-identity-rather-than-pose) alone defaults to upright product poses; other images do not inherit that posture. For [variant display](amazon-planning.md#variant-display-fixed-products-and-information-free-design), preserve actual required products, patterns, colours and selection information while AI chooses pose, arrangement and graphic relationships. Targeted style search is optional and element-scoped; an appealing reference never establishes this product's geometry or available variants. Store the selected design in this child's brief, not shared product facts. Check product fidelity, complete/attributable information and readability of the differences; do not judge a free display by similarity to the opening composition.
+
 ## One image's creative brief
 
 When showing analysis of a requirement sheet, include the mapping from each module's job to its design language, not just a role such as material/lifestyle. Explain the intended visual evidence, the role of copy/graphics, and what would fail to answer the task. The single-image resolver supplies functional principles; AI then proposes the actual per-image relationships from the filtered brief. These proposals are not facts extracted from old reference styles. Deferred tasks still have responsibilities and a possible explanatory language, but no invented dimensions or operating states.
