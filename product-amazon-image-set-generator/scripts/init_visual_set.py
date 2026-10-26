@@ -329,6 +329,9 @@ def main() -> int:
     }
     if layout:
         plan["a_plus_layout"] = layout
+    gallery = [m for m in modules if m['channel'] == 'AMAZON_GALLERY']
+    if len(gallery) > 2 and (brief is None or brief['job'].get('scope') != 'pilot'):
+        plan['gallery_opening_review'] = {'version': 1, 'image_ids': [m['module_id'] for m in gallery[:2]]}
     write_json(plan_path, plan)
 
     set_state = {

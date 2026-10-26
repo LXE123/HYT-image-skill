@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from set_common import SAFE_ID, generation_mode_errors, load_json, module_quality_errors, plan_modules, resolve_file, sha256, update_product_summary, write_json
+from gallery_review import review_policy_errors
 from a_plus_layout import layout_errors
 from quality_rules import creative_brief_errors
 from design_store import design_plan_checks
@@ -75,6 +76,7 @@ def main() -> int:
     if args.approve and plan.get("status") != "DRAFT":
         errors.append("only a DRAFT plan can be approved; create a revision instead")
     errors.extend(generation_mode_errors(plan))
+    errors.extend(review_policy_errors(plan))
     if not isinstance(plan.get("positioning"), str) or not plan["positioning"].strip():
         errors.append("positioning must be completed before approval")
     audience = plan.get("audience")

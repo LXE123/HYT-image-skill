@@ -93,7 +93,7 @@ class APlusLayoutTest(unittest.TestCase):
             spec["required_lock_ids"] = ["identity"]
             quality = spec["quality_contract"]
             spec["creative_brief"] = {
-                "layout_id": {"product_overview": "editorial_hero", "hardware_static": "benefit_split", "material_macro": "detail_context", "lifestyle_simple": "lifestyle_full", "range_story": "closing_story", "size_fit": "fit_guide", "mechanism_steps": "step_sequence"}[row["template_id"]],
+                "layout_id": {"main_product": "main_clean", "product_overview": "editorial_hero", "hardware_static": "benefit_split", "material_macro": "detail_context", "lifestyle_simple": "lifestyle_full", "range_story": "closing_story", "size_fit": "fit_guide", "mechanism_steps": "step_sequence"}[row["template_id"]],
                 "story_stage": "recognition" if row["sequence"] == 1 else "proof",
                 "visual_concept": row["sales_task"] + " expressed with a distinct clear focal subject",
                 "visual_device": "Actual material lit with directional daylight and a readable foreground/background relationship",

@@ -11,6 +11,7 @@ from set_common import SAFE_ID, compile_prompt, load_json, module_quality_errors
 from design_store import resolve_design
 from structure_state import dependency_errors
 from execution_policy import policy_errors
+from gallery_review import require_opening_approval
 
 
 STYLE_SCOPE = {
@@ -73,6 +74,11 @@ def main() -> int:
         parser.error(str(error))
     if not selected:
         parser.error("selected module does not exist in the approved plan")
+    try:
+        for module in selected:
+            require_opening_approval(root, plan, set_state, product_state, module['module_id'])
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        parser.error(str(error))
     package_index = load_json(root / "index.json")
     locks = {x.get("lock_id"): x for x in lockset.get("locks", []) if isinstance(x, dict)}
     pinned_locks = {x["lock_id"]: x for x in snapshot["identity_lockset"]["locks"]}

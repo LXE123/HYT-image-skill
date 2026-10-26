@@ -14,6 +14,7 @@ from a_plus_layout import design_handoff, image_membership, layout_summary
 from finalize_a_plus_image import export_errors
 from structure_state import dependency_errors, structure_requirements
 from execution_policy import policy_errors
+from gallery_review import opening_review_status, require_opening_approval
 
 SCRIPTS = Path(__file__).resolve().parent
 SINGLE = SCRIPTS.parents[1] / "product-single-image-generator" / "scripts"
@@ -124,6 +125,8 @@ def check_sources(root, plan, state, product):
 
 def packet(root, plan, state, product, row, phase, max_images):
     check_sources(root, plan, state, product)
+    if phase == "generation":
+        require_opening_approval(root, plan, state, product, row["module_id"])
     path = resolve_file(root, row.get("contract_path"))
     contract = load_contract(root, path)
     index = load_json(root / "index.json")
@@ -228,7 +231,14 @@ def main():
             command(SCRIPTS, "sync_set_status.py", root, "--set-id", args.set_id)
         plan, state, product = records(root, args.set_id)
         rows = progress(root, plan, state, product)
-        row = pick_generation(rows, args.module_id) if args.action == "next-generation" else pick(rows, args.module_id, product.get("workflow", {}).get("active_candidate_id"))
+        gate = opening_review_status(root, plan, state, product)
+        selectable = rows
+        if gate and not gate['approved']:
+            gallery_ids = {m['module_id'] for m in plan['modules'] if m['channel'] == 'AMAZON_GALLERY'}
+            selectable = [r for r in rows if r['module_id'] not in gallery_ids or r['module_id'] in gate['image_ids']]
+            if args.module_id and args.action in {'prepare', 'next-generation'}:
+                require_opening_approval(root, plan, state, product, args.module_id)
+        row = pick_generation(selectable, args.module_id) if args.action == "next-generation" else pick(rows if args.module_id else selectable, args.module_id, product.get("workflow", {}).get("active_candidate_id"))
         if args.action in {"status", "next", "next-generation", "sync"}:
             result = summary(plan, state, rows, row)
             if args.action == "next-generation":
@@ -254,6 +264,7 @@ def main():
             if row is None:
                 result = summary(plan, state, rows, row)
             else:
+                require_opening_approval(root, plan, state, product, row["module_id"])
                 attempt = row.get("attempt", 1)
                 if args.retry:
                     if row["status"] != "REJECTED":
@@ -329,6 +340,18 @@ def main():
             plan, state, product = records(root, args.set_id)
             rows = progress(root, plan, state, product)
             result = summary(plan, state, rows, pick(rows))
+        if args.action in {'status', 'next', 'next-generation', 'sync', 'record'}:
+            gate = opening_review_status(root, plan, state, product)
+            if gate:
+                result['opening_review'] = gate
+                current = result.get('current', {})
+                opening_unproduced = any(r['module_id'] in gate['image_ids'] and r.get('status') in
+                                         {'PLANNED', 'CONTRACT_CREATED'} for r in rows)
+                if (not gate['approved'] and not opening_unproduced
+                        and result.get('next_action') != 'RECONCILE_REFERENCE_CHANGE'
+                        and (row is None or (current.get('module_id') in gate['image_ids']
+                                             and current.get('status') in {'REVIEW_REQUIRED', 'ACCEPTED'}))):
+                    result['next_action'] = 'WAIT_FOR_GALLERY_OPENING_APPROVAL'
         encoded = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
         if len(encoded.encode("utf-8")) > args.max_bytes:
             raise ValueError(f"response exceeds {args.max_bytes} bytes; shorten this module's optional inputs or explicitly increase --max-bytes; no constraints were truncated")

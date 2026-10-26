@@ -8,6 +8,7 @@ import json
 from pathlib import Path, PurePosixPath
 from quality_rules import compile_prompt, validate_quality
 from context_store import load_contract
+from gallery_review import require_contract_opening_approval
 
 ROLES = {"PRODUCT_EVIDENCE": "PRODUCT_IDENTITY_ONLY", "POSE_ONLY": "POSE_CAMERA_COMPOSITION_LIGHTING_BACKGROUND_ONLY"}
 
@@ -100,6 +101,10 @@ def main() -> int:
     if not any(isinstance(item, dict) and item.get("run_id") == run_id for item in runs):
         errors.append("合同 run_id 未登记在 PRODUCT_STATE.json 的 runs 中")
     if args.ready_for_generation:
+        try:
+            require_contract_opening_approval(root, contract)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            errors.append(str(error))
         errors.extend(policy_errors(contract, generation=True))
         if isinstance(output, str) and (root / output).is_file():
             errors.append("生成前检查拒绝已存在的合同候选图；请继续审核或创建新合同")
