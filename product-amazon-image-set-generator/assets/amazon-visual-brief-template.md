@@ -20,7 +20,7 @@
 
 - Generation mode: `standard` by default; `expanded` only after an explicit large-set request
 - Requested deliverable: Gallery / A+ / both, from explicit instruction or established scope
-- Counts: Gallery defaults to 9 (2 white product displays + 3 selling-point images + 1 flexible product display + 3 lifestyles without promotional copy); A+ normally 13 within 9–15; both normally 22 total. Explicit counts override defaults.
+- Counts: Full Gallery covers all applicable supported content and derives count after decomposition; its editable initialization seed has 11 images, including separate product-character, fit and variant jobs. Expand for legible coverage, then let the user select outputs. A+ normally 13 within 9–15. Explicit counts/exclusions/pilots override defaults.
 - Canvas/copy/assembly requirements per channel: A+ 1464 × 600; Gallery uses its own requested main/secondary format
 - Positioning:
 - S-tier selling points:

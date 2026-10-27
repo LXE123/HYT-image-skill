@@ -1,4 +1,4 @@
 interface:
   display_name: "亚马逊套图生成"
-  short_description: "按指令生成主副图或 A+，每类通常 13 张、范围 9–15 张"
-  default_prompt: "使用 $product-amazon-image-set-generator 按我的指令生成主副图、A+ 或两者；每类通常 13 张，按内容在 9–15 张调整，未明确类型时先确认范围。"
+  short_description: "主图按适用内容完整生成后选留，A+ 通常 13 张，按指令选择渠道与范围"
+  default_prompt: "使用 $product-amazon-image-set-generator 按我的指令生成主副图、A+ 或两者；完整主图按适用内容确定张数，生成后由我选留，A+ 通常 13 张，未明确渠道时先确认范围。"

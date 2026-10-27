@@ -98,7 +98,7 @@ def main() -> int:
     parser.add_argument("--set-id", required=True)
     parser.add_argument("--marketplace", default="AMAZON_US")
     parser.add_argument("--deliverable", choices=("gallery", "a-plus", "both"), help="required scope unless explicit channel counts/profile already identify it")
-    parser.add_argument("--mode", choices=("standard", "expanded"), default="standard", help="standard: Gallery defaults to 9, A+ to 13; expanded: explicit large-set request")
+    parser.add_argument("--mode", choices=("standard", "expanded"), default="standard", help="standard: coverage-led Gallery with an editable 11-image seed, A+ normally 13; expanded: explicit large-set request")
     parser.add_argument("--count", type=int, help="count per selected channel, not combined total")
     parser.add_argument("--gallery-count", type=int, help="explicit Gallery count; unselected channels get zero")
     parser.add_argument("--a-plus-count", type=int, help="explicit A+ image-task count, not page-module count")

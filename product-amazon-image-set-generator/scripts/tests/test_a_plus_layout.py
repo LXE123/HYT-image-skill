@@ -295,7 +295,7 @@ class APlusLayoutTest(unittest.TestCase):
         self.assertFalse((self.root / "commercial").exists())
 
     def test_requested_channels_keep_separate_gallery_and_a_plus_defaults(self):
-        for scope, expected in (("gallery", (9, 0)), ("a-plus", (0, 13)), ("both", (9, 13))):
+        for scope, expected in (("gallery", (11, 0)), ("a-plus", (0, 13)), ("both", (11, 13))):
             self.run_script("init_visual_set.py", "--set-id", scope, "--deliverable", scope)
             plan = load_json(self.root / f"visual_sets/{scope}/SET_PLAN.json")
             counts = tuple(sum(x["channel"] == channel for x in plan["modules"]) for channel in ("AMAZON_GALLERY", "PREMIUM_A_PLUS"))

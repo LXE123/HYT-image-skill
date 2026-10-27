@@ -56,7 +56,8 @@ EXPANDED_MIN_IMAGES = 30
 NORMAL_MIN_IMAGES = 9
 NORMAL_MAX_IMAGES = 15
 NORMAL_TARGET_IMAGES = 13
-GALLERY_TARGET_IMAGES = 9
+# An editable coverage seed, not a production cap; import the decomposed brief for the actual count.
+GALLERY_TARGET_IMAGES = 11
 
 
 def generation_mode_errors(plan: dict) -> list[str]:
@@ -180,15 +181,37 @@ def default_modules(gallery_count: int, a_plus_count: int) -> list[dict]:
         ("Work or study context", "How is the product used in an evidenced work or study context?", "lifestyle_work", "lifestyle_simple"),
         ("Alternate signature detail", "What additional non-repeating detail helps the buyer decide?", "detail_alternate", "hardware_static"),
     ]
+    # Preserve compact explicit counts; complete requests start with separate fit/range/character jobs.
+    selection_slots = {}
+    if gallery_count >= GALLERY_TARGET_IMAGES:
+        gallery_tasks = [
+            *gallery_tasks[:5],
+            ("Product character and positioning", "Which evidenced design character suits this buyer?", "product_character", "as_planned"),
+            ("Size and compatibility selection", "Which size fits the buyer and which models are compatible?", "size_guidance", "as_planned"),
+            ("Actual variant range", "Which actual colours or patterns can the buyer choose?", "variant_range", "as_planned"),
+            *gallery_tasks[6:],
+        ]
+        selection_slots = {6: ("product_overview", "product_character"), 7: ("size_fit", "fit"), 8: ("range_story", "variants")}
     modules: list[dict] = []
     for sequence in range(1, gallery_count + 1):
-        if 10 <= sequence <= 15:
-            task, question, view, template_id = gallery_extras[sequence - 10]
+        extra = sequence - len(gallery_tasks) - 1
+        if 0 <= extra < len(gallery_extras):
+            task, question, view, template_id = gallery_extras[extra]
             modules.append(module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", "as_planned", template_id=template_id))
             continue
+        if extra >= len(gallery_extras):
+            modules.append(module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence,
+                                       f"Additional supported topic {sequence}",
+                                       "Which uncovered fact needs explanation?",
+                                       f"additional_proof_{sequence}", "1:1", "as_planned", template_id="product_overview"))
+            continue
         task, question, view, background = gallery_tasks[min(sequence - 1, len(gallery_tasks) - 1)]
-        template_id = "main_product" if sequence <= 2 else "product_overview" if sequence <= 6 else "lifestyle_simple"
+        template_id = "main_product" if sequence <= 2 else "lifestyle_simple" if view.startswith("lifestyle_") else "product_overview"
+        if sequence in selection_slots:
+            template_id, role = selection_slots[sequence]
         item = module_stub(f"gallery-{sequence:02d}", "AMAZON_GALLERY", sequence, task, question, view, "1:1", background, template_id=template_id)
+        if sequence in selection_slots:
+            item["image_intent"] = {"module_role": role, "must_show": []}
         if sequence <= 2:
             facing = "front" if sequence == 1 else "reverse"
             item["quality_contract"]["layout"]["composition"] = (
