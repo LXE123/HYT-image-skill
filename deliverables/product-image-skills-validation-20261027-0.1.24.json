@@ -1,0 +1,44 @@
+{
+  "version": "0.1.24",
+  "date": "2026-10-27",
+  "source_base_commit": "2d9366f8626cf99e078a3f1a0d9d083bcd033bec",
+  "skill_change_commits": [
+    "ab8ffdc",
+    "2d9366f"
+  ],
+  "package": "/Users/lxe-3/.codex/skills/dist/product-visual-skills-20261027-0.1.24.zip",
+  "latest_package": "/Users/lxe-3/.codex/skills/dist/product-image-skills.zip",
+  "archive_root": "product-visual-skills",
+  "package_sha256": "4bd851475da81463451d47897f957cbddb1431888c45be611fcb8e31a30de627",
+  "size_bytes": 234885,
+  "zip_entries": 69,
+  "skill_file_counts": {
+    "product-amazon-image-set-generator": 27,
+    "product-image-project-builder": 19,
+    "product-single-image-generator": 22
+  },
+  "skill_entry_validation": "3/3 passed on extracted package",
+  "python_ast_files_checked": 31,
+  "json_files_checked": 4,
+  "local_markdown_reference_paths_checked": 126,
+  "package_source_parity": "passed",
+  "zip_crc_and_sha256": "passed",
+  "latest_package_parity": "passed",
+  "extracted_cli_help_smoke_tests": "3/3 passed",
+  "extracted_opening_approval_smoke_check": "Unapproved Gallery remainder blocked; opening pair and A+ allowed",
+  "extracted_pose_scope_check": "Only Gallery opening pair upright; later Gallery and A+ unaffected; no shared invariants added",
+  "extracted_coverage_check": "Editable 11-image Gallery seed; separate fit/variants/product_character tasks; 17-image drafts allowed; A+ remains 13",
+  "regression_tests": {
+    "run_this_round": false,
+    "execution": "REUSED",
+    "source_commit": "2d9366f8626cf99e078a3f1a0d9d083bcd033bec",
+    "previous_run": 189,
+    "previous_passed": 187,
+    "previous_skipped": 2,
+    "skip_reason": "Optional real-image composition benchmark not configured"
+  },
+  "content_policy": "Only plugin manifest and three skill directories; no product data, startup guide, checksum manifest, development tests, or caches.",
+  "web_execution_tested": false,
+  "visual_generation_tested": false,
+  "human_visual_acceptance": false
+}
