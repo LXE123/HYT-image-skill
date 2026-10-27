@@ -10,6 +10,20 @@ Activate `--mode expanded` for an explicit 30–40-image or large exploration re
 
 Separate-file delivery can contain selling-point copy, icons, comparisons, detailed internal panels and verified steps. Main-image restrictions and explicit no-copy instructions apply only where relevant. Plan the message and needed source per image before its pose/layout. Missing evidence is a gap, not permission to substitute an unrelated image under the same topic label. Compare the final set against the user's content brief, not only counts and filenames.
 
+## Data gaps and conflicts at delivery
+
+After generating the currently executable images, deliver the outputs together with a **data gaps/conflicts table**. Derive it from the existing intake, fact/claim sources, task ledger and unresolved items; do not create another database or ask the user to approve the table before production. Cover every deferred or partially fulfilled responsibility. A general statement such as “missing measurements, operating evidence and conflicting data” is not sufficient.
+
+| Image ID / responsibility | Issue type | Specific data and source | Effect on this image | Output / current action | Needed information |
+|---|---|---|---|---|---|
+| Fill from the actual ledger | Missing / conflicting / unresolved correspondence | Name the missing field; for a conflict, give both values/statements and each file/page/item reference | Identify exactly which annotation, option, action or scene cannot be completed | Link the generated file and state partial scope, or mark deferred; identify unaffected content already produced | The precise value, authoritative version or relevant view needed to resolve this item |
+
+Distinguish a missing datum from a conflict between supplied sources. Report missing wrist range separately from incompatible-model information and installation-state evidence; do not merge them into an opaque “fit/installation blocked” row. Reuse supported specifications and actual visible product facts where adequate for the assigned content; absence of a separate test report alone does not invalidate them. Performance claims still need appropriate evidence. Do not infer product fit numbers, hidden operations or wet-use suitability to complete a row. Record the exact reason a required scene or claim is unsupported rather than calling all such cases “missing tests”.
+
+Confine a gap to its actual dependencies. Continue all unaffected authorized tasks. If an image combines supported and unresolved content, split/revise the affected task under existing rules when that preserves the assigned responsibility; never present a reduced image as full coverage. Missing optional layout examples are design work, not missing product data. Do not replace a blocked required topic with an unrelated beauty image or fill the table with invented problems. If no data issue is found, retain one row stating that no missing/conflicting data was identified in the checked scope.
+
+Alongside the table, state resolved planned count, actual generated-file count, deferred IDs and any executable unproduced IDs. “No issues” does not prove every image has been generated or visually accepted. Outside the existing opening-pair approval, an explicit user pause/pilot boundary or a real tool/runtime limit, continue while executable authorized work remains instead of asking the user to say continue. If a real limit interrupts production, identify that limit and the remaining IDs separately from data gaps; do not describe a five-image partial batch as the complete set. Resume only affected unresolved work after new evidence arrives, preserving existing outputs and review history.
+
 ## Gallery
 
 Plan the following responsibilities before resolving image count. These are content jobs, not compulsory one-file slots or a claim about listing upload capacity. Explicit counts, scopes and current instructions override the default; saved queues are not migrated on resume.
