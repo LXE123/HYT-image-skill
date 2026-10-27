@@ -41,7 +41,7 @@ python3 scripts/configure_design.py <package> --set-id <set> configure --mode ad
 | `proof_cards` | 一项卖点的多处证据 | 大主证据配少量从属细节 |
 | `step_sequence` | 调节、安装、使用 | 有实际状态依据的步骤序列 |
 | `fit_guide` | 尺寸、适配 | 测量视图与真实选择信息分区 |
-| `variant_grid` | 已登记的多款/多色 | 同角度、同尺度的选择矩阵 |
+| `variant_grid` | 明确采用矩阵比较的已登记多款/多色 | 同角度、同尺度的实际产品矩阵；不以色卡块替代产品 |
 | `evidence_compare` | 真实状态或自有选项对比 | 同尺度比较一个有依据的差异 |
 | `asymmetric_story` | 场景加细节 | 较大主景与从属细节列形成主次 |
 | `scene_triptych` | 多种使用情境 | 一个主场景与两个较小场景 |
@@ -51,6 +51,8 @@ python3 scripts/configure_design.py <package> --set-id <set> configure --mode ad
 | `closing_story` | 收束、拥有体验 | 信息较少的情境画面呼应整套故事 |
 
 每种版式包含方形/宽幅的归一化区域建议，以及构图和文案使用原则。区域只是起点，应按实际产品、姿态和字数调整；不能以框的位置为理由裁掉关键结构。对比、图形、步骤和多款均须有对应证据。布局库不产生产品事实，也不要求每张都有文字、图标或光效。
+
+多款展示不默认选择 `variant_grid`，六种目录风格也不穷尽设计空间；按 [款式设计](visual-direction.md#multi-variant-product-design) 从产品和任务发展自适应构图，并遵守整套背景/光线/字体边界。
 
 ## 六种风格的图片类型变化
 

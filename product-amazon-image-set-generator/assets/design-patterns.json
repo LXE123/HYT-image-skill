@@ -309,10 +309,10 @@
       ],
       "image_role": "selection",
       "composition_rules": [
-        "Arrange only registered variants in an evenly spaced selection matrix with consistent angle and scale.",
+        "When a comparison matrix is deliberately selected, arrange only registered variants as recognizable actual products with consistent angle and scale; swatch-card tiles cannot substitute for a multi-product display.",
         "Use colour grouping and one anchor product to aid selection; do not invent additional SKUs."
       ],
-      "copy_guidance": "Names/labels from registered variants; avoid unsupported best-choice badges.",
+      "copy_guidance": "Use registered variant names only when selected as final copy; do not automatically print card names or unsupported best-choice badges.",
       "zones": {
         "wide": {
           "product_box": [

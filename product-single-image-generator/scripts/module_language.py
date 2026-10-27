@@ -6,7 +6,16 @@ LANGUAGES = {
     "material": ("Material evidence: use observation scale, surface light and a context cue to explain texture.", "Readable actual surface/texture at a credible scale", "A full-product hero with a material adjective is not material proof"),
     "detail": ("Local construction: isolate the assigned component and explain its actual connection or finishing.", "The named component, interface or finishing detail", "Another complete-product render cannot replace the required local evidence"),
     "lifestyle": ("Environmental storytelling: meaningful person/action/place with naturally readable wearing or use.", "The assigned person, activity and environment with correct product contact and scale", "A floating product hero or interchangeable portrait with a slogan is not the assigned use context"),
-    "variants": ("Selection language: comparable views, consistent scale and clear labels for evidenced choices.", "Actual registered choices and the information needed to distinguish them", "One attractive product hero cannot stand in for a range or selection guide"),
+    "variants": (
+        "Product-range composition: derive spatial rhythm and a reading path from this product's form, variant differences and buyer question. "
+        "Keep choices comparable and scale interpretable; a grid, depth or enlarged hero is not compulsory. "
+        "Swatch cards supply only supported colour/pattern/name correspondence, never the page layout or background. "
+        "Realize the selected creative brief within the shared background/light/type; an established white set stays white.",
+        "Each required choice as a recognizable actual product with its distinguishing colour/pattern readable and correctly mapped; "
+        "labels only from selected final copy. An explicitly assigned swatch-only guide keeps its scope",
+        "Swatches, fabric tiles, names or one hero plus colour chips cannot replace a multi-product display. "
+        "Mechanical placement alone does not establish the planned design; a black background cannot replace an established white system for drama",
+    ),
     "fit": ("Explanatory selection: organize verified dimensions, compatibility or fit into an easy decision path.", "Verified fit/size information and the actual selection relationship", "A side view or texture photo alone cannot answer which version fits"),
     "operation": ("Sequential explanation: organize evidenced states and actions into a readable use sequence.", "The required verified states, order and action", "A static beauty shot or invented disassembly cannot replace operating evidence"),
     "care": ("Practical guidance: connect supported care instructions with the relevant product area or action.", "The actual supported care guidance and its product relationship", "A fresh hero or an unverified durability slogan cannot replace care information"),

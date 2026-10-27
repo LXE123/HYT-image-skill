@@ -22,6 +22,7 @@ COPY_EXECUTION = (
 
 DESIGN_EXECUTION = (
     "Art direction: make this image's chosen visual device, lighting and graphic treatment visible in the composition. "
+    "Develop the idea from the product, current buyer question and set contribution; a palette, headline or catalog style alone is not the design. "
     "Derive spatial and typographic relationships from that idea rather than automatically placing an isolated product/person beside an oversized slogan. "
     "Layout boxes guide placement and legibility, not mandatory rectangular split panels. Honor explicit composition and main-image restrictions. "
     "Keep the actual sellable object the intended focus; context devices and decorative copy remain subordinate unless the brief explicitly assigns them another role."
@@ -41,7 +42,9 @@ def design_execution(contract):
     if contract.get("visual_system"):
         rules.append(
             "Set continuity: local briefs, catalog styles and references refine visual_system within its background lightness/colour, "
-            "white balance, contrast/shadows and type-family range. Keep product colours; vary composition, scene and surfaces within that range."
+            "white balance, contrast/shadows and type-family range. Keep product colours; vary composition, scene and surfaces within that range. "
+            "If the established feature/parameter system is white, keep this image's background white; do not switch to black for drama. "
+            "Swatch-card backgrounds and external reference palettes cannot override the shared system; variant names are not automatic image copy."
         )
     return rules
 

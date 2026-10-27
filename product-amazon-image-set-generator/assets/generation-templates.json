@@ -139,7 +139,7 @@
         "layout_output"
       ],
       "prompt_rules": [
-        "For a selection task, show only registered choices with comparable views and accurate labels; a single product cannot substitute for a range. A single-product closing composition is allowed only when the actual task explicitly assigns it. Preserve identity and texture per SKU; invent no colours or accessories."
+        "For a multi-product selection task, depict each required registered choice as an actual recognizable product with readable differences; swatches or one hero plus colour chips cannot substitute for the range. Swatch cards supply scoped colour/pattern/name evidence, not the output layout or background. Derive the composition from the product and buyer question within the shared background/light/type; keep comparison and scale interpretable without requiring a matrix. Labels use selected final copy only. Explicit swatch-only or single-product closing assignments keep their scope. Preserve identity and texture per SKU; invent no colours or accessories."
       ]
     }
   ]

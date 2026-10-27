@@ -43,6 +43,8 @@ Use [autonomous execution](references/autonomous-design.md) for research or an i
 
 Optional references, only when needed: [style/reference integration](references/product-led-style-integration.md), [catalog layouts/styles](references/design-library.md), [template constraints](references/generation-templates.md), [claim wording](references/claim-safety.md). A catalog selection does not complete the creative brief.
 
+For multi-style/colour product displays in either channel, use [variant design](references/visual-direction.md#multi-variant-product-design): swatch cards supply scoped variant evidence, required choices appear as actual products, and task-led composition stays within the established set background/light/type. Use the `variants` task role even with a generic template.
+
 ## 4. Execute in the available environment
 
 **Web chat:** read [browser testing](references/browser-testing.md) and use the same ledger with available tools. Do not load the local runtime/schema references unless actually running scripts. Ordinary attachments do not install skills or grant local tools. Check actual image viewing and image-tool attachment support once; report capability limits honestly.

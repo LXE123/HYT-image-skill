@@ -14,11 +14,13 @@ Map the seven content responsibilities into this flow before choosing individual
 | Product explanation | 2. Core benefit/material experience | Actual product/material with concise supported benefits, optional icons or macro | Bring material information forward |
 | Feature proof | 3. Structure/craftsmanship | Product orientation plus related detail insets, part labels and supported purpose | Combine/reassign craftsmanship and signature details by buyer question |
 | Use explanation | 4. Function/use | Verified installation, adjustment, charging relationship or care as relevant | Broaden care to relevant use; retain required care within it |
-| Selection | 5. Range/variants | Comparable evidenced choices with clear labels | Retain range |
+| Selection | 5. Range/variants | Comparable actual product choices with readable differences and assigned labels | Retain range |
 | Selection | 6. Size/compatibility | Verified measurements, fit or compatibility relationships | Retain size; may share a presentation group with range |
 | Closing | 7. Lifestyle | Complete relevant sport/outdoor/work/daily contexts with naturally readable product | Move lifestyle to the closing section |
 
 These are content responsibilities, not seven mandatory files or exactly seven presentation groups. Combine related responsibilities when readable, or use several child images for one responsibility. Compatibility may appear near the hero when needed to identify the product; a hero may itself contain a lifestyle scene. Preserve explicit requirements. Mark unsupported required topics deferred; omit an irrelevant optional topic with a reason rather than inventing facts. Do not impose a care page on every product.
+
+For range/variant children, use [multi-variant product design](visual-direction.md#multi-variant-product-design): swatch cards establish scoped variant correspondence, required choices appear as actual products, and adaptive composition continues the same set background/light/type. Names become labels only when selected as final copy; comparable choices do not require a fixed matrix.
 
 Set the product's actual order once during planning. New images normally expand the relevant detail, selection or lifestyle carousel; their count does not create new page stages or scatter lifestyle between unfinished explanations. Revise the flow only for a real content/scope change. Keep existing IDs stable; page `sequence` and `image_ids` own presentation order. Style choices change palette, type, lighting, scenery and graphics within the agreed shared range, while the information flow stays coherent.
 
@@ -87,7 +89,7 @@ Each module has a different communication function within the shared visual iden
 | Product introduction | Recognition, product-led atmosphere and overall form | A slogan that hides what is sold |
 | Material | Surface light, observation scale, texture/context relationship | Complete-product beauty shot with a material adjective |
 | Construction/component | Local structure, interface and finishing explanation | Another hero showing no relevant local evidence |
-| Variants/selection | Comparable views, consistent scale, clear choice labels | One attractive variant standing in for a range |
+| Variants/selection | Comparable actual products, interpretable scale, assigned choice labels | Swatches or one attractive variant standing in for a product range |
 | Fit/compatibility | Verified decision information and explanatory relationships | Side profile alone with no selection information |
 | Operation | Evidenced states, sequence and action clarity | Static hero or invented mechanism |
 | Care | Supported guidance linked to a product area or action | Generic durability slogan or another hero |

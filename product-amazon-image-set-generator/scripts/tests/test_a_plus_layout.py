@@ -13,7 +13,7 @@ sys.path.insert(0, str(SCRIPTS))
 from a_plus_layout import design_handoff, image_membership, layout_errors, layout_progress, profile_drafts
 from set_common import default_modules, generation_mode_errors, load_json, plan_modules, sha256, store_module_spec, write_json
 from context_store import load_contract
-from quality_rules import qa_errors, required_checks, review_binding
+from quality_rules import compile_prompt, qa_errors, required_checks, review_binding
 from finalize_a_plus_image import assess_crop, finalize, export_errors
 from PIL import Image
 
@@ -582,6 +582,61 @@ class APlusLayoutTest(unittest.TestCase):
         self.assertEqual(contract["module_language"]["role"], "detail")
         self.assertEqual(contract["module_language"]["parent"]["content_role"], "material_and_details")
 
+    def test_variant_evidence_and_adaptive_design_survive_generic_template_and_review(self):
+        # Synthetic swatch evidence tests handoff, not visual correctness or card parsing.
+        card = self.root / 'input/variant-card.png'
+        Image.new('RGB', (32, 16), 'black').save(card)
+        self.index['product_evidence'].append({
+            'evidence_id': 'variant-card', 'path': 'input/variant-card.png', 'sha256': sha256(card),
+            'source_type': 'REAL_PHOTO', 'structures': [], 'observed_states': [], 'hard_constraint': True})
+        write_json(self.root / 'index.json', self.index)
+        self.state['reference_package']['sha256'] = sha256(self.root / 'index.json')
+        write_json(self.root / 'PRODUCT_STATE.json', self.state)
+        plan = self.initialize()
+        self.fill_for_approval(plan)
+        plan['visual_system'].update(background='White background throughout feature, parameter and variant images',
+                                     typography='Same sans-serif family', forbidden_cues=['black page background'])
+        plan['design_system'] = {'mode': 'adaptive', 'narrative_framework_id': 'AIDA', 'rationale': 'Product-led range design'}
+        row = next(x for x in plan['modules'] if x['module_id'] == 'a-plus-07')
+        row['template_id'] = 'product_overview'
+        path = self.root / row['spec_path']
+        spec = load_json(path)
+        required = ['Navy stripe choice as an actual product; retain longitudinal pattern',
+                    'Coral dot choice as an actual product; retain dot placement',
+                    'Card establishes the two variant correspondences only; its black background and names are not page design or final copy']
+        spec['image_intent'] = {'module_role': 'variants', 'must_show': required}
+        spec['product_references'].append({'path': 'input/variant-card.png', 'role': 'PRODUCT_EVIDENCE', 'usage_scope': 'PRODUCT_IDENTITY_ONLY'})
+        spec['copy'] = {}
+        spec['creative_brief'].update(layout_id='adaptive', story_stage='proof',
+            visual_concept='Use the longitudinal stripe rhythm to connect two recognizable products',
+            visual_device='Unequal negative-space intervals and parallel product axes on the shared white background',
+            information_hierarchy=['Both variant products', 'Readable stripe and dot differences'],
+            success_criteria=['Both product forms and patterns remain readable', 'The planned spacing rhythm is visible without a dark page'])
+        write_json(path, spec)
+        write_json(self.folder / 'SET_PLAN.json', plan)
+        self.run_script('validate_set_plan.py', '--set-id', 'aplus', '--approve')
+        packet = json.loads(self.run_script('set_runtime.py', '--set-id', 'aplus', 'prepare', '--module-id', row['module_id']).stdout)
+        contract = load_contract(self.root, self.root / packet['contract_path'])
+        self.assertEqual(contract['generation_template']['template_id'], 'product_overview')
+        self.assertEqual(contract['module_language']['role'], 'variants')
+        self.assertTrue(set(required).issubset(contract['module_language']['must_show']))
+        self.assertEqual(contract['style_references'], [])
+        self.assertEqual(contract['copy'], {})
+        self.assertEqual([x['role'] for x in packet['references']], ['PRODUCT_EVIDENCE', 'PRODUCT_EVIDENCE'])
+        # Both prompt formats carry the same authored design, shared boundaries and variant requirements.
+        legacy = {k: v for k, v in contract.items() if k != 'prompt_format'}
+        for prompt in (packet['prompt'], compile_prompt(legacy)):
+            for label, expected in [('Image purpose', contract['image_intent']),
+                                    ('Creative direction', spec['creative_brief']),
+                                    ('Module responsibility and design language', contract['module_language'])]:
+                line = next(x for x in prompt.splitlines() if x.startswith(label + ': '))
+                self.assertEqual(json.loads(line.split(': ', 1)[1]), expected)
+        self.write_final_candidate(packet)
+        reviewed = json.loads(self.run_script('set_runtime.py', '--set-id', 'aplus', 'packet', '--module-id', row['module_id'], '--phase', 'review').stdout)
+        for key in ('image_intent', 'module_language', 'creative_brief', 'visual_system'):
+            self.assertEqual(reviewed['expected'][key], contract[key])
+        self.assertTrue({'content_coverage', 'module_role_fit', 'design_quality'}.issubset(reviewed['checks']))
+
     def test_next_generation_skips_saved_pending_image_without_accepting_it(self):
         plan = self.initialize()
         self.fill_for_approval(plan)
@@ -773,7 +828,8 @@ class APlusLayoutTest(unittest.TestCase):
             typography='One sans-serif family with the same heading/body hierarchy',
             forbidden_cues=['dark full background', 'cold blue grade', 'crushed black shadows'])
         surfaces = {'a-plus-01': 'Pale stone environment in the shared light range',
-                    'a-plus-03': 'Cream fabric surface in the shared light range'}
+                    'a-plus-03': 'Cream fabric surface in the shared light range',
+                    'a-plus-07': 'Light warm-neutral selection space in the shared light range'}
         for row in plan['modules']:
             path = self.root / row['spec_path']
             spec = load_json(path)
