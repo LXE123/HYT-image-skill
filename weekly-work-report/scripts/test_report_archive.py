@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import subprocess
+import sys
 
 spec=importlib.util.spec_from_file_location('archive',Path(__file__).with_name('report_archive.py'))
 archive=importlib.util.module_from_spec(spec)
@@ -18,21 +20,25 @@ class ArchiveBehavior(unittest.TestCase):
     def period(self,day):
         return archive.paths(self.root,self.config,archive.iso(day))
 
-    def test_thursday_friday_boundary(self):
-        for day in ['2026-10-09','2026-10-15']:
+    def test_wednesday_thursday_boundary(self):
+        for day in ['2026-10-08','2026-10-14']:
             p=self.period(day)
-            self.assertEqual((p['week_number'],p['period_start'],p['meeting_date']),(1,'2026-10-09','2026-10-15'))
-        p=self.period('2026-10-16')
-        self.assertEqual((p['week_number'],p['period_start'],p['meeting_date']),(2,'2026-10-16','2026-10-22'))
+            self.assertEqual((p['week_number'],p['period_start'],p['period_end'],p['meeting_date']),(1,'2026-10-08','2026-10-14','2026-10-15'))
+        for day in ['2026-10-15','2026-10-16']:
+            p=self.period(day)
+            self.assertEqual((p['week_number'],p['period_start'],p['meeting_date']),(2,'2026-10-15','2026-10-22'))
+        meeting=archive.paths(self.root,self.config,archive.iso('2026-10-15'),meeting=True)
+        self.assertEqual((meeting['week_number'],meeting['period_end']),(1,'2026-10-14'))
 
     def test_new_year_does_not_reset(self):
-        before=self.period('2026-12-31')
-        after=self.period('2027-01-01')
+        before=self.period('2026-12-30')
+        after=self.period('2026-12-31')
         self.assertEqual(after['week_number'],before['week_number']+1)
         self.assertEqual(after['meeting_date'],'2027-01-07')
+        self.assertEqual(self.period('2027-01-01')['week_number'],after['week_number'])
 
     def test_earlier_archive_does_not_become_week_zero(self):
-        with self.assertRaises(ValueError): self.period('2026-10-08')
+        with self.assertRaises(ValueError): self.period('2026-10-07')
 
     def test_prepare_only_creates_date_directories(self):
         p=self.period('2026-10-15');archive.prepare(p)
@@ -94,7 +100,7 @@ class ArchiveBehavior(unittest.TestCase):
 
     def test_fourth_week_anchor_and_next_week(self):
         c=self.historical()
-        for day,number in [('2026-10-09',4),('2026-10-15',4),('2026-10-16',5)]:
+        for day,number in [('2026-10-08',4),('2026-10-09',4),('2026-10-14',4),('2026-10-15',5),('2026-10-16',5),('2026-10-29',7)]:
             self.assertEqual(archive.paths(self.root,c,archive.iso(day))['week_number'],number)
 
     def test_first_week_has_no_previous_goal_section(self):
@@ -128,5 +134,48 @@ class ArchiveBehavior(unittest.TestCase):
         archive.prepare(p);Path(p['report_md']).write_text('历史报告',encoding='utf-8')
         actual=archive.collect(self.root,self.historical(),archive.iso('2026-10-15'))
         self.assertEqual(actual['previous_report'],p['report_md'])
+
+    def test_collection_excludes_meeting_day_and_finds_legacy_thursday_next_period(self):
+        c=self.historical()
+        for day in ['2026-10-22','2026-10-28','2026-10-29']:
+            # Simulate previously archived Friday–Thursday directories without moving them.
+            week='week5' if day=='2026-10-22' else 'week6'
+            folder=self.root/week/'daily-reports'/day
+            folder.mkdir(parents=True,exist_ok=True)
+            for session in ['上午','下午']:
+                (folder/(session+'.md')).write_text(day+session,encoding='utf-8')
+        current=archive.collect(self.root,c,archive.iso('2026-10-29'))
+        self.assertEqual({x['date'] for x in current['files']},{'2026-10-22','2026-10-28'})
+        following=archive.collect(self.root,c,archive.iso('2026-11-05'))
+        self.assertEqual({x['date'] for x in following['files']},{'2026-10-29'})
+        p=archive.paths(self.root,c,archive.iso('2026-10-29'))
+        self.assertEqual(p['week_name'],'week7')
+        self.assertIn('week6',p['morning'])
+        self.assertEqual(Path(p['morning']).read_text(),'2026-10-29上午')
+
+    def test_duplicate_daily_copies_are_deduplicated_or_fail_on_conflict(self):
+        for week in ['week1','week2']:
+            folder=self.root/week/'daily-reports/2026-10-15'
+            folder.mkdir(parents=True)
+            (folder/'上午.md').write_text('same')
+        result=archive.collect(self.root,self.config,archive.iso('2026-10-22'))
+        self.assertEqual(len(result['files']),1)
+        (self.root/'week1/daily-reports/2026-10-15/上午.md').write_text('different')
+        with self.assertRaisesRegex(ValueError,'不同内容'):
+            archive.collect(self.root,self.config,archive.iso('2026-10-22'))
+
+    def test_cli_init_and_meeting_paths_do_not_advance_the_anchor_week(self):
+        script=str(Path(archive.__file__))
+        def run(*args):
+            result=subprocess.run([sys.executable,'-B',script,'--root',str(self.root),*args],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            return json.loads(result.stdout)
+        initial=run('init','--anchor-meeting','2026-10-15','--anchor-week-number','4')
+        self.assertEqual(initial['week_number'],4)
+        daily=run('paths','--date','2026-10-29')
+        meeting=run('paths','--date','2026-10-29','--meeting')
+        self.assertEqual(daily['week_number'],7)
+        self.assertEqual(meeting['week_number'],6)
+        self.assertEqual(meeting['period_end'],'2026-10-28')
 
 if __name__=='__main__':unittest.main()

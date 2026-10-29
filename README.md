@@ -140,7 +140,7 @@ A+ 的尺寸转换使用 [finalize_a_plus_image.py](product-single-image-generat
 
 已有当前工作上下文时，也可以发送 `$weekly-work-report 下午归档`。周会汇总可发送“使用 `$weekly-work-report`，根据本周期日报生成本周四周会报告”。示例中的工作内容应替换为实际计划或进展。
 
-默认保存到系统桌面的 `weekMessage/`，按周五至周四归档；日报保存 Markdown，周会报告生成 Markdown 和 HTML。同日同一时段的补充会合并到原文件。详细规则见 [技能入口](weekly-work-report/SKILL.md)。
+默认保存到系统桌面的 `weekMessage/`，按周四至周三归档，周四上午 10 点开会，周四全天工作计入下一期；日报保存 Markdown，周会报告生成 Markdown 和 HTML。同日同一时段的补充会合并到原文件。详细规则见 [技能入口](weekly-work-report/SKILL.md)。
 
 ## 仓库目录与安装包
 

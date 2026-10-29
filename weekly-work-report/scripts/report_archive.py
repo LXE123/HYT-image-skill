@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic Friday–Thursday report paths and safe local archive writes."""
+"""Thursday–Wednesday work periods for Thursday 10:00 meetings; safe archive writes."""
 import argparse
 from contextlib import contextmanager
 from datetime import date, timedelta
@@ -21,6 +21,15 @@ def iso(value):
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+
+def daily_path(root, week, day, session):
+    """Keep existing daily files in place when the cutoff changes; never choose conflicting copies."""
+    target=week/'daily-reports'/day/(session+'.md')
+    existing=sorted(p for p in root.glob(f'week*/daily-reports/{day}/{session}.md')
+                    if re.fullmatch(r'week\d+',p.parents[2].name) and p.is_file())
+    if len({sha(p) for p in existing})>1:
+        raise ValueError('同日同一时段存在不同内容，需先合并，不能重复计入或猜测：'+', '.join(map(str,existing)))
+    return target if target in existing or not existing else existing[0]
 
 def config(root):
     c = json.loads((root / CONFIG).read_text(encoding='utf-8'))
@@ -46,7 +55,7 @@ def paths(root, c, day, meeting=False):
     anchor_number=c.get('anchor_week_number',1)
     historical=c.get('historical_reports',[])
     match=next((h for h in historical if h['meeting_date']==day.isoformat()),None) if meeting else None
-    if not meeting and day<anchor-timedelta(days=6):
+    if not meeting and day<anchor-timedelta(days=7):
         match=next((h for h in sorted(historical,key=lambda x:x['week_number'],reverse=True)
                     if iso(h['period_start'])<=day<=iso(h.get('period_end',h['meeting_date']))),None)
     if match:
@@ -54,12 +63,14 @@ def paths(root, c, day, meeting=False):
         start=iso(match['period_start'])
         period_end=iso(match.get('period_end',match['meeting_date']))
         number=match['week_number']
-    elif c.get('version')==2 and day<anchor-timedelta(days=6):
+    elif c.get('version')==2 and day<anchor-timedelta(days=7):
         raise ValueError('该历史日期尚无已确认归属；不能按节假日前后的自然周补猜')
     else:
         end = day + timedelta(days=(3-day.weekday()) % 7)
-        start = end - timedelta(days=6)
-        period_end=end
+        if not meeting and day.weekday()==3:
+            end += timedelta(days=7)
+        start = end - timedelta(days=7)
+        period_end=end-timedelta(days=1)
         number = (end-anchor).days // 7 + anchor_number
     if number < 1:
         raise ValueError('日期早于 week1；旧归档保持原样，需明确历史迁移规则')
@@ -69,7 +80,7 @@ def paths(root, c, day, meeting=False):
     return {'week_number': number, 'week_name': week.name,
             'period_start': start.isoformat(), 'period_end':period_end.isoformat(),'meeting_date': end.isoformat(),
             'week_dir': str(week), 'daily_dir': str(daily), 'meeting_dir': str(meeting),
-            'morning': str(daily/'上午.md'), 'afternoon': str(daily/'下午.md'),
+            'morning': str(daily_path(root,week,day.isoformat(),'上午')), 'afternoon': str(daily_path(root,week,day.isoformat(),'下午')),
             'report_md': str(meeting/'report.md'), 'report_html': str(meeting/'report.html')}
 
 def prepare(p):
@@ -193,7 +204,7 @@ def collect(root,c,day):
     for i in range((iso(p['period_end'])-iso(p['period_start'])).days+1):
         d=(iso(p['period_start'])+timedelta(days=i)).isoformat()
         for session in ['上午','下午']:
-            file=Path(p['week_dir'])/'daily-reports'/d/(session+'.md')
+            file=daily_path(root,Path(p['week_dir']),d,session)
             item={'date':d,'session':session,'path':str(file)}
             if file.is_file():
                 item['sha256']=sha(file)
@@ -215,6 +226,8 @@ def main():
     for name in ['paths','collect','daily','weekly']:
         sub=subs.add_parser(name)
         sub.add_argument('--date',required=True,type=iso)
+        if name=='paths':
+            sub.add_argument('--meeting',action='store_true',help='按周会日期查询当期报告；周四默认 paths 查询日报的下一期归属')
         if name in ['daily','weekly']:
             sub.add_argument('--replace',action='store_true')
         if name=='daily':
@@ -241,10 +254,10 @@ def main():
                     raise ValueError('归档设置已有不同值，不能隐式改动周次')
             else:
                 write_bundle({root/CONFIG:(json.dumps(c,ensure_ascii=False,indent=2)+'\n').encode()})
-            p=paths(root,c,args.first_meeting);prepare(p)
+            p=paths(root,c,args.first_meeting,meeting=True);prepare(p)
         result={**p,'config':str(root/CONFIG)}
     else:
-        c=config(root); p=paths(root,c,args.date,meeting=args.command in ['collect','weekly'])
+        c=config(root); p=paths(root,c,args.date,meeting=args.command in ['collect','weekly'] or getattr(args,'meeting',False))
         if args.command=='paths':
             result={**p,'sha256':{k:sha(Path(p[k])) for k in ['morning','afternoon','report_md','report_html']}}
         elif args.command=='collect':

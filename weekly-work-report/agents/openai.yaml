@@ -1,4 +1,4 @@
 interface:
   display_name: "日报与周会归档"
-  short_description: "按周五到周四归档上午下午日报，并生成简明周报 Markdown 和 HTML"
+  short_description: "按周四到周三归档日报，周四上午十点开会，生成简明周报 Markdown 和 HTML"
   default_prompt: "使用 $weekly-work-report 整理本次工作汇报，并按周四周会周期归档。"
