@@ -11,6 +11,7 @@ from quality_rules import compile_prompt, validate_quality
 from context_store import load_contract
 from gallery_review import require_contract_opening_approval
 from project_store import claim_generation
+from runtime_log import log_event
 
 ROLES = {"PRODUCT_EVIDENCE": "PRODUCT_IDENTITY_ONLY", "POSE_ONLY": "POSE_CAMERA_COMPOSITION_LIGHTING_BACKGROUND_ONLY"}
 
@@ -177,6 +178,7 @@ def execute(args, parser):
     for error in errors:
         print(f"FAIL  {error}")
     if errors:
+        log_event(root, "validation.failed", "ERROR", contract_address=relative_contract, errors=errors)
         return 1
     if args.ready_for_generation:
         relative_contract = contract_path.relative_to(root).as_posix()
@@ -202,4 +204,5 @@ def execute(args, parser):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

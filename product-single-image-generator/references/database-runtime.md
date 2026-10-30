@@ -72,3 +72,22 @@ python3 scripts/project_records.py <package> migrate
 Migration imports production JSON in one transaction and retains exact bytes for pinned plans, specifications, snapshots, contracts and visual reports. It normalizes runtime state, then archives original JSON under `legacy_runtime/`; original images/evidence stay in place. New runtime reads never fall back to archived or stray JSON. A malformed import rolls back and leaves the originals usable. An existing database is never merged with a second state source. Migration changes storage only: it does not enlarge a saved queue, grant approval or regenerate an image.
 
 For debugging/handoff snapshots, `project_records.py <package> export --output <new-external-directory>` writes a consistent JSON export. It is a read-only snapshot, not another live project. To move a live project, preserve its database and all referenced images/evidence together after commands have finished. No database or product data belongs in the skill installation package.
+
+## Runtime diagnostics
+
+Project commands append diagnostic events to `runtime/logs/YYYY-MM-DD.jsonl` using UTC dates/timestamps. These files are independent of SQLite: rollback and connection errors remain inspectable even when database access fails. They are diagnostics, not another source of workflow state. Read-only business queries may append diagnostics while leaving product data unchanged. Logs are split by day and retained; there is no automatic deletion policy.
+
+Events identify the command/action, operation ID, parent operation, PID and supplied set/module/run/contract IDs. Transactions have their own ID and requested/started/committed/rolled-back outcome, duration and error traceback. Validation/QA failures, generation claims/results and subprocess exit codes have explicit events. Record-write events inside an ultimately rolled-back transaction do not mean the data committed. A started operation/transaction with no finish event may indicate an interrupted process; inspect its database state and actual images before recovery.
+
+Failure stderr includes the operation ID and log path; normal stdout remains the existing JSON/text protocol. Query from the single-image skill directory:
+
+```text
+python3 scripts/runtime_log.py <package> --last 50
+python3 scripts/runtime_log.py <package> --level ERROR --last 20
+python3 scripts/runtime_log.py <package> --operation-id <id>
+python3 scripts/runtime_log.py <package> --set-id <set> --module-id <image-id>
+```
+
+For a child failure, follow its `parent_operation_id` and the parent's subprocess events. The query works without opening the database and reports malformed/partial log lines while retaining readable events. Logs omit full argv, prompts/copy, image data, SQL payloads and environment dumps; supplied claim tokens are redacted from errors and captured stderr. Log-write failure emits a stderr diagnostic without undoing a successful business operation or replacing its original exception. Preserve relevant logs with the project when investigating an error.
+
+The runtime does not invoke the external image tool itself. Its internal network/model errors are only known when supplied through the existing registration/recovery commands; put the actual failed/abandoned outcome in `recover --reason`, rather than inferring failure from a timeout. Logs help locate and reproduce a problem; they never auto-retry, change product facts or grant visual acceptance.

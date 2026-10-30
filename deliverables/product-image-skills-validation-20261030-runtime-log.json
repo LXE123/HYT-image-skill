@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-30",
+  "source_base": "4a879fb",
+  "change": "project runtime diagnostics independent of SQLite",
+  "logs": {
+    "path": "runtime/logs/YYYY-MM-DD.jsonl",
+    "timestamps": "UTC",
+    "retention": "daily files retained; no automatic deletion",
+    "cli_entrypoints": [
+      "product-image-project-builder/scripts/register_render_template.py",
+      "product-image-project-builder/scripts/build_structure_assets.py",
+      "product-image-project-builder/scripts/check_package.py",
+      "product-image-project-builder/scripts/register_product_evidence.py",
+      "product-image-project-builder/scripts/initialize_package.py",
+      "product-single-image-generator/scripts/validate_run_records.py",
+      "product-single-image-generator/scripts/run_geometry_check.py",
+      "product-single-image-generator/scripts/record_candidate.py",
+      "product-single-image-generator/scripts/finalize_a_plus_image.py",
+      "product-single-image-generator/scripts/compile_generation_prompt.py",
+      "product-single-image-generator/scripts/revise_structure_state.py",
+      "product-single-image-generator/scripts/project_records.py",
+      "product-single-image-generator/scripts/init_run_records.py",
+      "product-single-image-generator/scripts/candidate_qa.py",
+      "product-amazon-image-set-generator/scripts/configure_design.py",
+      "product-amazon-image-set-generator/scripts/init_visual_set.py",
+      "product-amazon-image-set-generator/scripts/add_a_plus_image.py",
+      "product-amazon-image-set-generator/scripts/validate_set_plan.py",
+      "product-amazon-image-set-generator/scripts/set_runtime.py",
+      "product-amazon-image-set-generator/scripts/sync_set_status.py",
+      "product-amazon-image-set-generator/scripts/materialize_module_contracts.py"
+    ],
+    "events": [
+      "operation start/error/finish",
+      "parent-child subprocess start/finish",
+      "transaction request/start/commit/rollback/failure",
+      "record writes",
+      "validation failures",
+      "visual QA disposition",
+      "generation claims/results",
+      "geometry failures"
+    ],
+    "query_filters": [
+      "last",
+      "operation_id",
+      "set_id",
+      "module_id",
+      "candidate_id",
+      "level"
+    ],
+    "protocol": "stdout unchanged; failed command stderr includes operation ID/log path",
+    "privacy": "no full argv/prompt/copy/image/SQL/env dump; supplied claim tokens redacted",
+    "failure_policy": "logger errors reported to stderr without changing business outcome"
+  },
+  "verification": {
+    "regression_command": "python3 -B -m unittest discover -s product-amazon-image-set-generator/scripts/tests -p 'test_*.py'",
+    "python": "/Users/lxe-3/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "total": 211,
+    "passed": 209,
+    "skipped": 2,
+    "skip_reason": "optional real-image benchmarks not configured",
+    "new_logging_tests": 9,
+    "skills_validated": 3,
+    "python_ast_files": 46,
+    "skill_local_links": 142,
+    "cli_help": 3,
+    "static_checks": [
+      "F401",
+      "F811",
+      "F821",
+      "F822",
+      "F823",
+      "E9",
+      "git diff --check"
+    ],
+    "scale": {
+      "images": 30,
+      "claimed_packet_bytes": [
+        4915,
+        4961
+      ],
+      "status_bytes": [
+        358,
+        461
+      ]
+    }
+  },
+  "limits": {
+    "database_schema_changed": false,
+    "external_image_tool_called": false,
+    "real_image_validation": false,
+    "human_visual_acceptance": false,
+    "installation_archive_rebuilt": false,
+    "existing_product_projects_modified": false
+  }
+}

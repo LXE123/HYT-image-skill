@@ -5,6 +5,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -18,13 +19,20 @@ from gallery_review import opening_review_status, require_opening_approval
 from project_store import transaction, claim_generation, get_claim, recover_generation
 from sync_set_status import synchronize
 from record_candidate import record_candidate
+from runtime_log import child_environment, log_event, log_error
 
 SCRIPTS = Path(__file__).resolve().parent
 SINGLE = SCRIPTS.parents[1] / "product-single-image-generator" / "scripts"
 
 
 def command(directory, script, root, *args, allow_failure=False):
-    result = subprocess.run([sys.executable, "-B", str(directory / script), str(root), *args], capture_output=True, text=True)
+    started = time.monotonic()
+    log_event(root, "subprocess.started", child_command=script)
+    result = subprocess.run([sys.executable, "-B", str(directory / script), str(root), *args],
+                            capture_output=True, text=True, env=child_environment())
+    log_event(root, "subprocess.finished", "ERROR" if result.returncode else "INFO", child_command=script,
+              exit_code=result.returncode, duration_ms=round((time.monotonic() - started) * 1000),
+              **({"stderr_tail": result.stderr[-4000:]} if result.returncode else {}))
     if result.returncode and not allow_failure:
         raise ValueError((result.stdout + result.stderr)[-3000:].strip())
     return result
@@ -354,10 +362,12 @@ def main():
             raise ValueError(f"response exceeds {args.max_bytes} bytes; shorten this module's optional inputs or explicitly increase --max-bytes; no constraints were truncated")
         print(encoded)
     except (OSError, ValueError, KeyError, TypeError) as error:
+        log_error(error, root=root)
         print(json.dumps({"error": str(error)}, ensure_ascii=False), file=sys.stderr)
         return 1
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

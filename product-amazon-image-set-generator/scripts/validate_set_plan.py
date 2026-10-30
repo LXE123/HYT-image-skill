@@ -10,6 +10,7 @@ from pathlib import Path
 
 from set_common import SAFE_ID, generation_mode_errors, load_json, module_quality_errors, plan_modules, resolve_file, sha256, write_json
 from project_store import transaction
+from runtime_log import log_event
 from gallery_review import review_policy_errors
 from a_plus_layout import layout_errors
 from quality_rules import creative_brief_errors
@@ -309,6 +310,7 @@ def execute(args, parser):
     for error in errors:
         print(f"FAIL  {error}")
     if errors:
+        log_event(root, "validation.failed", "ERROR", set_id=args.set_id, errors=errors)
         return 1
     if args.approve:
         now = datetime.now(timezone.utc).isoformat()
@@ -351,4 +353,5 @@ def execute(args, parser):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

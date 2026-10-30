@@ -101,4 +101,5 @@ def main():
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

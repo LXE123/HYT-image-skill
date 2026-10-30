@@ -11,6 +11,7 @@ from desktop_location import product_package_path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
 from project_store import DATABASE, read_json as store_read, write_json as store_write, digest as store_digest, exists as store_exists
+from runtime_log import bind_project
 
 
 EVIDENCE_DIRS = (
@@ -67,9 +68,11 @@ def preflight_existing(root: Path, product_id: str, version: str, evidence_mode:
             raise ValueError("已有 PRODUCT_STATE.json 与目标产品或版本不一致")
         return True
     if store_exists(root):
-        allowed_directories = {"input", *EVIDENCE_DIRS}
+        allowed_directories = {"input", "runtime", "runtime/logs", *EVIDENCE_DIRS}
         for item in root.rglob("*"):
             relative = item.relative_to(root).as_posix()
+            if item.is_file() and item.relative_to(root).parts[:2] == ("runtime", "logs") and item.suffix == ".jsonl":
+                continue
             if not item.is_dir() or relative not in allowed_directories:
                 raise ValueError(f"目标文件夹包含未识别内容，未写入任何文件：{relative}")
     return False
@@ -89,6 +92,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         root = product_package_path(args.product_id, args.version, args.desktop_root)
+        bind_project(root)
         resume = preflight_existing(root, args.product_id, args.version, args.evidence_mode, args.product_scope)
     except (OSError, ValueError) as error:
         parser.error(str(error))
@@ -157,4 +161,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

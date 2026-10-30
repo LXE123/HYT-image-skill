@@ -9,6 +9,8 @@ Generate one independent image per call. A single image may contain related deta
 
 Local state, plans, contracts and visual-QA records live in `PROJECT.sqlite3`. Read [database runtime](references/database-runtime.md) when querying/editing records, claiming generation or recovering a project. JSON names in commands are database addresses; actual reference and output images remain files.
 
+On a script failure, use the stderr operation ID and [runtime diagnostics](references/database-runtime.md#runtime-diagnostics) to locate the failed command/transaction before correcting or recovering the affected task. Logs do not establish the outcome of an external image-tool call.
+
 ## Select the current image
 
 For set-linked work, use the Amazon skill's `set_runtime.py` packet. Read only the selected child's task, evidence, creative brief and review requirements. Content groups may contain several children: one completed child does not complete its parent. A batch uses `next-generation` to find unproduced work; `next` may instead request review of an existing output.

@@ -53,18 +53,18 @@ class ReviewReuseTest(unittest.TestCase):
         return review_status(self.root, self.contract, self.path, self.candidate, self.report)
 
     def test_unchanged_report_reuses_pass_without_changing_files(self):
-        before = {p: store_bytes(p) for p in self.root.iterdir()}
+        before = {p: store_bytes(p) for p in self.root.iterdir() if p.is_file()}
         self.assertEqual(self.status()['status'], 'PASS')
         self.assertEqual(self.status()['execution'], 'REUSE')
         self.assertEqual(self.status()['next_action'], 'AWAIT_REAL_HUMAN_DECISION')
-        self.assertEqual(before, {p: store_bytes(p) for p in self.root.iterdir()})
+        self.assertEqual(before, {p: store_bytes(p) for p in self.root.iterdir() if p.is_file()})
 
     def test_candidate_reference_contract_and_rule_changes_invalidate(self):
         for changed in ('candidate.png', 'reference.png', 'copy', 'rules'):
             with self.subTest(changed=changed):
                 report = copy.deepcopy(self.report)
                 contract = copy.deepcopy(self.contract)
-                files = {p: store_bytes(p) for p in self.root.iterdir()}
+                files = {p: store_bytes(p) for p in self.root.iterdir() if p.is_file()}
                 if changed.endswith('.png'):
                     Image.new('RGB', (96,64), 'black').save(self.root/changed)
                 elif changed == 'copy':
@@ -158,14 +158,14 @@ class ReviewReuseTest(unittest.TestCase):
         folder = self.root/'qa/visual'
         folder.mkdir(parents=True)
         store_write(folder/'report.json', self.report)
-        before = {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()}
+        before = {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file() and 'runtime' not in p.relative_to(self.root).parts}
         args = ['candidate_qa.py', str(self.root), '--contract', 'contract.json', '--report', 'qa/visual/report.json', '--status']
         with patch.object(sys, 'argv', args), patch.object(candidate_qa, 'export_errors', side_effect=AssertionError('duplicate export check')):
             with patch.object(quality_rules, 'export_errors', wraps=quality_rules.export_errors) as export:
                 with redirect_stdout(StringIO()):
                     self.assertEqual(candidate_qa.main(), 0)
                 self.assertEqual(export.call_count, 1)
-        self.assertEqual(before, {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()})
+        self.assertEqual(before, {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file() and 'runtime' not in p.relative_to(self.root).parts})
 
 
 @unittest.skipUnless(os.environ.get('PRODUCT_COMPOSITION_BENCHMARK'), 'real-image benchmark path not supplied; no real-image result claimed')

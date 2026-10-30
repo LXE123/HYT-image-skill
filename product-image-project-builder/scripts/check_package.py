@@ -10,6 +10,7 @@ from pathlib import PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
 from project_store import read_json as store_read, write_json as store_write, digest as store_digest, transaction
+from runtime_log import log_event, log_error
 
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 SOURCE_TYPES = {"REAL_PHOTO", "DESIGN_RENDER", "CAD_RENDER", "DETAIL"}
@@ -45,11 +46,13 @@ def check(root):
     try:
         index = store_read(root / "index.json")
     except (OSError, json.JSONDecodeError) as exc:
+        log_error(exc, root=root)
         print(f"FAIL  无法读取 index.json：{exc}")
         return 1
     try:
         state = store_read(root / "PRODUCT_STATE.json")
     except (OSError, json.JSONDecodeError) as exc:
+        log_error(exc, root=root)
         print(f"FAIL  无法读取 PRODUCT_STATE.json：{exc}")
         return 1
     mode = index.get("evidence_mode")
@@ -148,6 +151,7 @@ def check(root):
     for line in warnings:
         print(f"WARN  {line}")
     if errors:
+        log_event(root, "validation.failed", "ERROR", errors=errors)
         print(f"检查失败：{len(errors)} 项；提醒：{len(warnings)} 项")
         return 1
     index_hash = sha256(root / "index.json")
@@ -170,4 +174,5 @@ def check(root):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

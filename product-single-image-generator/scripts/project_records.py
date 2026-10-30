@@ -8,6 +8,7 @@ import sys
 
 from project_store import (DATABASE, _read, _write, digest, encode, location,
                            read_json, reader, transaction, recover_generation)
+from runtime_log import log_error
 
 
 def address_path(root, address):
@@ -163,10 +164,12 @@ def main():
                         result = {"draft": str(args.output.resolve()), "sha256": digest(path)}
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except (OSError, ValueError, KeyError, TypeError) as exc:
+        log_error(exc, root=root)
         print(str(exc), file=sys.stderr)
         return 1
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

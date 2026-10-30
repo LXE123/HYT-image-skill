@@ -54,4 +54,6 @@ Natural-language analysis reconciles related regions across views into current p
 
 Run `python3 scripts/check_package.py <package>` after evidence changes; consult [schema](references/schema.md) for record problems. A changed reference hash sets `REFERENCE_CHANGED`; the single-image skill reconciles dependent locks/contracts/candidates. Do not silently revoke accepted work or mark evidence as visually verified from a script pass.
 
+For a script error, follow its stderr operation ID/log path and [runtime diagnostics](../product-single-image-generator/references/database-runtime.md#runtime-diagnostics). Preserve the original failure and inspect current records before retrying intake or initialization.
+
 Hand off package path, product/SKU/version, validated reference hash, readiness and unresolved gap IDs. Production reads selected originals plus the filtered requirements, not the whole intake transcript or all old layouts. Same-chat exports/role changes do not establish independent context isolation.

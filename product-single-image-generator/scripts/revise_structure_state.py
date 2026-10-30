@@ -108,4 +108,5 @@ def main():
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 if __name__ == '__main__':
-    main()
+    from runtime_log import run_cli
+    run_cli(main)

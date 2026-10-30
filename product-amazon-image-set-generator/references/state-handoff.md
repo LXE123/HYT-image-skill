@@ -82,6 +82,8 @@ The decision reference identifies the user's/designated reviewer's real message 
 
 ## Recovery, limits and compatibility
 
+For command failures, use the stderr operation ID and the single-image [runtime diagnostics](../../product-single-image-generator/references/database-runtime.md#runtime-diagnostics). Project JSONL logs retain transaction outcomes and parent/child failures independently of SQLite. Inspect the affected state/image before applying a correction; logs do not authorize repeating a generation call.
+
 - Image saved but decision not committed: `prepare` discovers it and resumes review.
 - Candidate decision and derived set/module status commit together or both roll back. Set summaries are query projections, never a second writable copy.
 - Approved spec/catalog/source changed: refuse stale production; create a reviewed revision. Accepted history is retained.

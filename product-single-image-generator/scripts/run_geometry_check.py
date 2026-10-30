@@ -13,6 +13,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from context_store import load_contract
+from runtime_log import log_event, log_error
 
 
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
@@ -162,14 +163,17 @@ def reuse_report(root: Path, state: dict, contract: dict, contract_path: Path, c
     try:
         result = load_json(result_path)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        log_error(error, root=root)
         print(f"Existing geometry report is invalid: {error}")
         return 4
     if result.get("candidate_sha256") != candidate_hash or result.get("config_sha256") != config_hash:
+        log_event(root, "geometry.disposition", "ERROR", message="Candidate ID already has a geometry report for different candidate or config content")
         print("Candidate ID already has a geometry report for different candidate or config content")
         return 4
     try:
         record_state(root, state, contract, contract_path, candidate_path, result)
     except (OSError, ValueError) as error:
+        log_error(error, root=root)
         print(f"Cannot record existing geometry result: {error}")
         return 4
     print(f"REUSE  {result.get('status')}: {result_path.parent}")
@@ -193,6 +197,7 @@ def main() -> int:
         state = load_json(root / "PRODUCT_STATE.json")
         package_index = load_json(root / "index.json")
     except (OSError, ValueError, json.JSONDecodeError) as error:
+        log_error(error, root=root)
         print(f"Invalid package or contract: {error}")
         return 4
 
@@ -201,29 +206,36 @@ def main() -> int:
     candidate_id = contract.get("candidate_id") or (f"{run_id}-{view}" if run_id and view else None)
     output_path = contract.get("output_path")
     if not all(isinstance(value, str) and SAFE_ID.fullmatch(value) for value in (run_id, view, candidate_id)) or not safe_relative(output_path):
+        log_event(root, "geometry.disposition", "ERROR", message="Contract has invalid run, view, candidate, or output identifiers")
         print("Contract has invalid run, view, candidate, or output identifiers")
         return 4
     candidate_path = (root / output_path).resolve()
     try:
         candidate_path.relative_to(root / "candidates")
     except ValueError:
+        log_event(root, "geometry.disposition", "ERROR", message="Contract candidate lies outside the package candidates directory")
         print("Contract candidate lies outside the package candidates directory")
         return 4
     if "rejected" in candidate_path.parts or not candidate_path.is_file():
+        log_event(root, "geometry.disposition", "ERROR", message="Contract candidate is missing or already rejected")
         print("Contract candidate is missing or already rejected")
         return 4
     if contract.get("sku") != state.get("sku") or state.get("product_id") != package_index.get("product_id"):
+        log_event(root, "geometry.disposition", "ERROR", message="SKU or product identity does not match state, contract, and index")
         print("SKU or product identity does not match state, contract, and index")
         return 4
     if not any(isinstance(item, dict) and item.get("run_id") == run_id for item in state.get("runs", [])):
+        log_event(root, "geometry.disposition", "ERROR", message="Contract run is not registered in PRODUCT_STATE.json")
         print("Contract run is not registered in PRODUCT_STATE.json")
         return 4
     workflow = state.get("workflow", {})
     if workflow and workflow.get("active_contract") not in (None, contract_path.relative_to(root).as_posix()):
+        log_event(root, "geometry.disposition", "ERROR", message="Contract is not the active contract in PRODUCT_STATE.json")
         print("Contract is not the active contract in PRODUCT_STATE.json")
         return 4
     lockset = state.get("identity_lockset", {})
     if contract_state_errors(root, contract):
+        log_event(root, "geometry.disposition", "ERROR", message="Identity lockset is absent, stale, or inconsistent")
         print("Identity lockset is absent, stale, or inconsistent")
         return 4
 
@@ -238,6 +250,7 @@ def main() -> int:
     try:
         config_path.relative_to(root / "qa" / "geometry" / "templates")
     except ValueError:
+        log_event(root, "geometry.disposition", "ERROR", message="Geometry config must be inside qa/geometry/templates")
         print("Geometry config must be inside qa/geometry/templates")
         return 4
 
@@ -267,8 +280,10 @@ def main() -> int:
             write_new_json(result_path, result)
             record_state(root, state, contract, contract_path, candidate_path, result)
         except (OSError, ValueError) as error:
+            log_error(error, root=root)
             print(f"Cannot record geometry result: {error}")
             return 4
+        log_event(root, "geometry.disposition", "WARNING", message=f"REVIEW_REQUIRED_NO_TEMPLATE: {report_dir}")
         print(f"REVIEW_REQUIRED_NO_TEMPLATE: {report_dir}")
         return 3
 
@@ -276,6 +291,7 @@ def main() -> int:
         config = load_json(config_path)
         config_hash = digest(config_path)
     except (OSError, ValueError, json.JSONDecodeError) as error:
+        log_error(error, root=root)
         print(f"Invalid geometry config: {error}")
         return 4
     report_dir = report_root / config_hash[:12]
@@ -298,19 +314,24 @@ def main() -> int:
             write_new_json(result_path, result)
             record_state(root, state, contract, contract_path, candidate_path, result)
         except (OSError, ValueError) as error:
+            log_error(error, root=root)
             print(f"Cannot record geometry result: {error}")
             return 4
+        log_event(root, "geometry.disposition", "WARNING", message=f"REVIEW_REQUIRED_NO_TEMPLATE: {report_dir}")
         print(f"REVIEW_REQUIRED_NO_TEMPLATE: {report_dir}")
         return 3
 
     if config.get("identity_lockset_version") != lockset.get("version"):
+        log_event(root, "geometry.disposition", "ERROR", message="Geometry config does not match the current identity lockset")
         print("Geometry config does not match the current identity lockset")
         return 4
     renders = {item.get("template_id") for item in package_index.get("render_templates", []) if isinstance(item, dict) and item.get("status") == "approved"}
     if not config.get("source_render_template_ids") or not set(config.get("source_render_template_ids", [])).issubset(renders):
+        log_event(root, "geometry.disposition", "ERROR", message="Approved geometry config lacks current approved render sources")
         print("Approved geometry config lacks current approved render sources")
         return 4
     if config.get("sku") != contract.get("sku") or config.get("view") != view:
+        log_event(root, "geometry.disposition", "ERROR", message="Geometry config SKU or view does not match the contract")
         print("Geometry config SKU or view does not match the contract")
         return 4
 
@@ -325,9 +346,11 @@ def main() -> int:
             path.relative_to(root)
         load_json(annotation_path)
     except (KeyError, OSError, ValueError, json.JSONDecodeError):
+        log_event(root, "geometry.disposition", "ERROR", message="Template path escapes the package root, or annotation is missing or invalid")
         print("Template path escapes the package root, or annotation is missing or invalid")
         return 4
     if not template_path.is_file() or not mask_path.is_file():
+        log_event(root, "geometry.disposition", "ERROR", message="Geometry template is incomplete")
         print("Geometry template is incomplete")
         return 4
 
@@ -336,6 +359,7 @@ def main() -> int:
         import numpy as np
         from PIL import Image
     except ImportError as error:
+        log_error(error, root=root)
         print(f"Missing dependency: {error.name}. Use the package-local .runtime.", file=sys.stderr)
         return 4
 
@@ -343,6 +367,7 @@ def main() -> int:
     registration_dir.mkdir(parents=True, exist_ok=True)
     copied = registration_dir / candidate_path.name
     if store_exists(copied) and digest(copied) != candidate_hash:
+        log_event(root, "geometry.disposition", "ERROR", message="Candidate ID is already registered to different file content")
         print("Candidate ID is already registered to different file content")
         return 4
     if not store_exists(copied):
@@ -351,6 +376,7 @@ def main() -> int:
         rgb = np.asarray(Image.open(candidate_path).convert("RGB"))
         template = np.asarray(Image.open(mask_path).convert("L")) >= 128
     except (OSError, ValueError) as error:
+        log_error(error, root=root)
         print(f"Cannot read candidate or template image: {error}")
         return 4
 
@@ -410,9 +436,11 @@ def main() -> int:
         try:
             existing_registration = load_json(registration_record)
         except (OSError, ValueError, json.JSONDecodeError) as error:
+            log_error(error, root=root)
             print(f"Existing candidate registration is invalid: {error}")
             return 4
         if existing_registration.get("candidate_sha256") != candidate_hash:
+            log_event(root, "geometry.disposition", "ERROR", message="Candidate registration record is bound to different content")
             print("Candidate registration record is bound to different content")
             return 4
     else:
@@ -431,6 +459,7 @@ def main() -> int:
     try:
         record_state(root, state, contract, contract_path, candidate_path, result)
     except (OSError, ValueError) as error:
+        log_error(error, root=root)
         print(f"Geometry report was written, but state update failed: {error}")
         return 4
     print(f"{status}: {report_dir}")
@@ -438,4 +467,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

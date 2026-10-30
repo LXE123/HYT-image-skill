@@ -10,6 +10,7 @@ from pathlib import Path
 from quality_rules import digest, file_at, review_binding, review_status, required_checks
 from context_store import load_contract
 from finalize_a_plus_image import export_errors
+from runtime_log import log_event
 
 
 
@@ -79,6 +80,9 @@ def execute(args, parser):
             return 0
         report = store_read(file_at(root, args.report))
         result = review_status(root, contract, contract_path, candidate, report)
+        log_event(root, "qa.evaluated", "INFO" if result["status"] == "PASS" else "WARNING",
+                  candidate_id=contract["candidate_id"], report_address=args.report,
+                  status=result["status"], reason=result.get("reason"), errors=result.get("errors", []))
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -86,4 +90,5 @@ def execute(args, parser):
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from runtime_log import run_cli
+    raise SystemExit(run_cli(main))

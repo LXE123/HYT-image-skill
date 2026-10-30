@@ -199,13 +199,13 @@ class QualityWorkflowTest(unittest.TestCase):
     def test_review_packet_reuses_linked_report_without_writing_or_accepting(self):
         record, _, _ = self.accepted_fixture()
         self.attach_passing_report_fixture(record)
-        before = {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()}
+        before = {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file() and 'runtime' not in p.relative_to(self.root).parts}
         result = self.run_script(AMAZON, "set_runtime.py", "--set-id", "set1", "packet", "--module-id", "gallery-01", "--phase", "review")
         packet = json.loads(result.stdout)
         self.assertEqual(packet['review']['execution'], 'REUSE')
         self.assertEqual(packet['review']['status'], 'PASS')
         self.assertEqual(packet['review']['report_path'], 'qa/visual/candidate.json')
-        self.assertEqual(before, {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()})
+        self.assertEqual(before, {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file() and 'runtime' not in p.relative_to(self.root).parts})
 
     def test_complete_report_then_changed_image(self):
         record, contract, candidate = self.accepted_fixture()

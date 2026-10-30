@@ -10,7 +10,10 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
+import time
 import uuid
+
+from runtime_log import _transaction_id, log_event, log_error
 
 DATABASE = "PROJECT.sqlite3"
 _active = ContextVar("project_transaction", default=None)
@@ -102,22 +105,41 @@ def transaction(root, create=False):
             raise ValueError("one operation cannot mutate two product databases")
         yield current[1]
         return
-    db = connect(root, create)
+    db = None
     token = None
+    log_token = _transaction_id.set(uuid.uuid4().hex)
+    started = time.monotonic()
+    phase = "connect"
     try:
+        log_event(root, "transaction.requested")
+        db = connect(root, create)
+        phase = "begin"
         db.execute("BEGIN IMMEDIATE")
         token = _active.set((root, db))
+        phase = "body"
+        log_event(root, "transaction.started")
         yield db
+        phase = "commit"
         db.commit()
+        log_event(root, "transaction.committed", changed_rows=db.total_changes,
+                  duration_ms=round((time.monotonic() - started) * 1000))
     except BaseException as exc:
-        db.rollback()
+        if db is not None:
+            try:
+                db.rollback()
+            except sqlite3.Error as rollback_error:
+                log_error(rollback_error, "transaction.rollback_failed", root=root)
+        log_error(exc, "transaction.rolled_back" if token is not None else "transaction.failed", root=root,
+                  phase=phase, duration_ms=round((time.monotonic() - started) * 1000))
         if isinstance(exc, sqlite3.Error):
             raise ValueError(f"project transaction: {exc}") from exc
         raise
     finally:
         if token is not None:
             _active.reset(token)
-        db.close()
+        if db is not None:
+            db.close()
+        _transaction_id.reset(log_token)
 
 
 @contextmanager
@@ -218,6 +240,11 @@ def _write(db, address, value, text=None):
         kind = "review" if address.startswith("qa/visual/") else "contract" if address.startswith("runs/") else "plan"
         db.execute("INSERT INTO records VALUES(?,?,?) ON CONFLICT(address) DO UPDATE SET payload=excluded.payload WHERE payload!=excluded.payload",
                    (address, kind, text if text is not None else encode(value)))
+    workflow = value.get("workflow")
+    status = value.get("status") or (workflow.get("status") if isinstance(workflow, dict) else None)
+    log_event(_active.get()[0] if _active.get() else None, "record.written", address=address,
+              status=status,
+              **{key: value[key] for key in ("module_id", "candidate_id", "run_id", "set_id") if key in value})
 
 
 def read_json(path):
@@ -297,6 +324,8 @@ def claim_generation(root, contract_address, candidate_id):
         token = uuid.uuid4().hex
         db.execute("INSERT INTO generation_claims(candidate_id,token,contract_address,contract_sha256,status) VALUES(?,?,?,?, 'RUNNING')",
                    (candidate_id, token, contract_address, contract_hash))
+        log_event(root, "generation.claimed", candidate_id=candidate_id, contract_address=contract_address,
+                  contract_sha256=contract_hash, status="RUNNING")
         return token
 
 
@@ -314,6 +343,7 @@ def finish_claim(root, candidate_id, status, token=None, reason=None):
             raise ValueError("claimed contract changed; recover its original binding before recording")
         db.execute("UPDATE generation_claims SET status=?,reason=?,updated_at=CURRENT_TIMESTAMP WHERE candidate_id=?",
                    (status, reason, candidate_id))
+        log_event(root, "generation.finished", candidate_id=candidate_id, status=status, reason=reason)
 
 
 def get_claim(root, candidate_id):
