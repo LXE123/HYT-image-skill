@@ -18,7 +18,7 @@ Use `--desktop-root` only when the user explicitly requests another desktop root
 
 - An existing `ProductVisualWorkspace` or `products` directory is normal; reuse it.
 - Different product IDs and versions remain isolated and may coexist.
-- When the exact product/version directory contains a valid `index.json` and `PRODUCT_STATE.json` matching all initialization parameters, report `RESUME` and do not overwrite either file.
+- When the exact product/version directory contains a valid `index.json` and matching product state in `PROJECT.sqlite3`, report `RESUME` and do not overwrite existing records. Legacy JSON projects require the explicit [database migration](../../product-single-image-generator/references/database-runtime.md#legacy-projects-and-exports).
 - An empty directory, or a directory containing only the expected empty input scaffold, may be completed after an interrupted setup.
-- If only one control file exists, either control file is invalid, identity/mode/scope differs, the target is a regular file, or unrecognized content exists before initialization, stop without overwriting or adopting it.
+- If the index or database state is missing/invalid, identity/mode/scope differs, the target is a regular file, or unrecognized content exists before initialization, stop without overwriting or adopting it.
 - Never choose a new suffix automatically. A collision needs an explicit new version or a deliberate repair of the existing package.

@@ -5,7 +5,6 @@ No object detector or image generator is called. Synthetic fixtures are not visu
 import copy
 from contextlib import redirect_stdout
 from io import StringIO
-import json
 import os
 from pathlib import Path
 import sys
@@ -18,8 +17,11 @@ sys.path.insert(0, str(SINGLE))
 from PIL import Image
 import candidate_qa
 import quality_rules
-from quality_rules import composition_result, digest, qa_errors, required_checks, review_binding, review_status
+from quality_rules import composition_result, digest, required_checks, review_binding, review_status
 
+
+
+from project_store import read_json as store_read, write_json as store_write, read_bytes as store_bytes
 
 class ReviewReuseTest(unittest.TestCase):
     def setUp(self):
@@ -33,8 +35,8 @@ class ReviewReuseTest(unittest.TestCase):
                          'quality_contract': {'layout': {'product_box': [.5,.1,.95,.9], 'copy_box': [.02,.1,.4,.9]}},
                          'copy': {'title': 'Detail'}, 'output_requirements': {'format': 'PNG'}}
         self.path = self.root/'contract.json'
-        self.path.write_text(json.dumps(self.contract))
-        (self.root/'PRODUCT_STATE.json').write_text('{"candidates":[]}')
+        store_write(self.path, self.contract)
+        store_write(self.root/'PRODUCT_STATE.json', {'candidates': []})
         self.candidate = {'candidate_id': 'candidate', 'path': 'candidate.png'}
         self.report = {'schema_version': 2, 'candidate_id': 'candidate', 'candidate_sha256': digest(self.root/'candidate.png'),
                        'contract_sha256': digest(self.path), 'inspection_method': 'VISUAL_INSPECTION',
@@ -51,18 +53,18 @@ class ReviewReuseTest(unittest.TestCase):
         return review_status(self.root, self.contract, self.path, self.candidate, self.report)
 
     def test_unchanged_report_reuses_pass_without_changing_files(self):
-        before = {p: p.read_bytes() for p in self.root.iterdir()}
+        before = {p: store_bytes(p) for p in self.root.iterdir()}
         self.assertEqual(self.status()['status'], 'PASS')
         self.assertEqual(self.status()['execution'], 'REUSE')
         self.assertEqual(self.status()['next_action'], 'AWAIT_REAL_HUMAN_DECISION')
-        self.assertEqual(before, {p: p.read_bytes() for p in self.root.iterdir()})
+        self.assertEqual(before, {p: store_bytes(p) for p in self.root.iterdir()})
 
     def test_candidate_reference_contract_and_rule_changes_invalidate(self):
         for changed in ('candidate.png', 'reference.png', 'copy', 'rules'):
             with self.subTest(changed=changed):
                 report = copy.deepcopy(self.report)
                 contract = copy.deepcopy(self.contract)
-                files = {p: p.read_bytes() for p in self.root.iterdir()}
+                files = {p: store_bytes(p) for p in self.root.iterdir()}
                 if changed.endswith('.png'):
                     Image.new('RGB', (96,64), 'black').save(self.root/changed)
                 elif changed == 'copy':
@@ -155,22 +157,22 @@ class ReviewReuseTest(unittest.TestCase):
     def test_cli_status_is_read_only_and_does_not_repeat_export_check(self):
         folder = self.root/'qa/visual'
         folder.mkdir(parents=True)
-        (folder/'report.json').write_text(json.dumps(self.report))
-        before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}
+        store_write(folder/'report.json', self.report)
+        before = {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()}
         args = ['candidate_qa.py', str(self.root), '--contract', 'contract.json', '--report', 'qa/visual/report.json', '--status']
         with patch.object(sys, 'argv', args), patch.object(candidate_qa, 'export_errors', side_effect=AssertionError('duplicate export check')):
             with patch.object(quality_rules, 'export_errors', wraps=quality_rules.export_errors) as export:
                 with redirect_stdout(StringIO()):
                     self.assertEqual(candidate_qa.main(), 0)
                 self.assertEqual(export.call_count, 1)
-        self.assertEqual(before, {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
+        self.assertEqual(before, {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()})
 
 
 @unittest.skipUnless(os.environ.get('PRODUCT_COMPOSITION_BENCHMARK'), 'real-image benchmark path not supplied; no real-image result claimed')
 class RealCompositionBenchmarkTest(unittest.TestCase):
     def test_annotated_real_images_and_declared_derived_cases(self):
         manifest_path = Path(os.environ['PRODUCT_COMPOSITION_BENCHMARK'])
-        manifest = json.loads(manifest_path.read_text())
+        manifest = store_read(manifest_path)
         self.assertIsInstance(manifest['human_verified'], bool)
         for case in manifest['cases']:
             with self.subTest(case=case['id']):
@@ -186,7 +188,7 @@ class RealCompositionBenchmarkTest(unittest.TestCase):
     def test_source_crop_guard_against_the_same_annotated_cases(self):
         from finalize_a_plus_image import assess_crop
         manifest_path = Path(os.environ['PRODUCT_COMPOSITION_BENCHMARK'])
-        manifest = json.loads(manifest_path.read_text())
+        manifest = store_read(manifest_path)
         for case in manifest['cases']:
             with self.subTest(case=case['id']):
                 image_path = manifest_path.parent/case['image_path']

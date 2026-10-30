@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """Create one reference package and its initial shared workflow state."""
-
-import argparse
-import hashlib
-import json
-import os
+import sys
 from pathlib import Path
 
+import argparse
+import json
+import os
+
 from desktop_location import product_package_path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
+from project_store import DATABASE, read_json as store_read, write_json as store_write, digest as store_digest, exists as store_exists
 
 
 EVIDENCE_DIRS = (
@@ -19,30 +22,32 @@ EVIDENCE_DIRS = (
 
 
 def write_new(path: Path, value: dict) -> None:
+    if path.name == "PRODUCT_STATE.json":
+        if store_exists(path):
+            raise FileExistsError("product state already exists")
+        store_write(path, value)
+        return
     with path.open("x", encoding="utf-8") as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2)
         stream.write("\n")
 
 
 def load_object(path: Path) -> dict:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError(f"{path.name} 必须是 JSON 对象")
-    return value
+    return store_read(path)
 
 
 def preflight_existing(root: Path, product_id: str, version: str, evidence_mode: str, product_scope: str) -> bool:
-    if root.exists() and not root.is_dir():
+    if store_exists(root) and not root.is_dir():
         raise ValueError(f"目标路径已存在但不是文件夹：{root}")
-    if (root / ".initialize.lock").exists():
+    if store_exists(root / ".initialize.lock"):
         raise ValueError("检测到初始化锁；另一个进程可能正在创建产品包，或上次初始化异常中断")
     index_path = root / "index.json"
     state_path = root / "PRODUCT_STATE.json"
-    if index_path.exists() != state_path.exists():
-        present = index_path.name if index_path.exists() else state_path.name
-        missing = state_path.name if index_path.exists() else index_path.name
+    if store_exists(index_path) != (store_exists(state_path) or state_path.is_file()):
+        present = index_path.name if store_exists(index_path) else state_path.name
+        missing = state_path.name if store_exists(index_path) else index_path.name
         raise ValueError(f"检测到不完整产品包：存在 {present} 但缺少 {missing}；请先修复或更换 version")
-    if index_path.exists():
+    if store_exists(index_path):
         try:
             index = load_object(index_path)
             state = load_object(state_path)
@@ -61,7 +66,7 @@ def preflight_existing(root: Path, product_id: str, version: str, evidence_mode:
         if state.get("product_id") != product_id or reference.get("path") != "index.json" or reference.get("version") != version:
             raise ValueError("已有 PRODUCT_STATE.json 与目标产品或版本不一致")
         return True
-    if root.exists():
+    if store_exists(root):
         allowed_directories = {"input", *EVIDENCE_DIRS}
         for item in root.rglob("*"):
             relative = item.relative_to(root).as_posix()
@@ -71,11 +76,7 @@ def preflight_existing(root: Path, product_id: str, version: str, evidence_mode:
 
 
 def sha256(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+    return store_digest(path)
 
 
 def main() -> int:
@@ -109,10 +110,11 @@ def main() -> int:
     except (FileExistsError, OSError) as error:
         parser.error(f"初始化锁创建失败；目录可能正被使用或上次初始化未完成：{error}")
     created: list[Path] = []
-    failure: OSError | None = None
+    failure: Exception | None = None
     try:
         write_new(index_path, index)
         created.append(index_path)
+        created.append(root / DATABASE)
         write_new(state_path, {
             "schema_version": 2,
             "product_id": args.product_id,
@@ -136,8 +138,7 @@ def main() -> int:
             "geometry_checks": [],
             "decision_log": [],
         })
-        created.append(state_path)
-    except OSError as error:
+    except (OSError, ValueError) as error:
         failure = error
         for created_path in reversed(created):
             try:

@@ -1,5 +1,7 @@
 # Generation templates and visual QA
 
+Production JSON names in this guide are SQLite record addresses. Use [database runtime](database-runtime.md) to query/fill drafts and record decisions; do not create parallel state files. Schema examples below describe returned objects.
+
 Read before generating any image with people, connectors, clasps, routing, or operating instructions. Template validation checks recorded constraints, not image correctness. Inspect the generated pixels at full size before recording a result.
 
 ## Concrete generation contract

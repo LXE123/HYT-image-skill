@@ -7,11 +7,13 @@ import argparse
 import json
 from pathlib import Path
 
-from set_common import SAFE_ID, compile_prompt, load_contract, load_json, plan_modules, qa_errors, resolve_file, sha256, update_product_summary, validate_quality, write_json
+from set_common import SAFE_ID, compile_prompt, load_contract, load_json, plan_modules, qa_errors, resolve_file, sha256, validate_quality, write_json
+from project_store import transaction
 
 
 from structure_state import dependency_errors
 from execution_policy import policy_errors
+from project_store import get_claim
 
 
 def main() -> int:
@@ -19,6 +21,11 @@ def main() -> int:
     parser.add_argument("package", type=Path)
     parser.add_argument("--set-id", required=True)
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser, quiet=False):
     if not SAFE_ID.fullmatch(args.set_id):
         parser.error("set-id must use letters, digits, dots, underscores, or hyphens")
 
@@ -69,6 +76,10 @@ def main() -> int:
         candidate = candidates.get(record.get("candidate_id"))
         if candidate is None:
             updated["status"] = "CONTRACT_CREATED" if record.get("contract_path") else "PLANNED"
+            if record.get("candidate_id"):
+                claim = get_claim(root, record["candidate_id"])
+                if claim and claim["status"] == "RUNNING":
+                    updated["status"] = "GENERATING"
             updated.pop("accepted_output", None)
         else:
             decision = candidate.get("status")
@@ -154,7 +165,7 @@ def main() -> int:
     elif any(status == "REJECTED" for status in required_states):
         set_state["status"] = "MODULES_GENERATING"
         set_state["next_action"] = "REGENERATE_REJECTED_MODULES"
-    elif any(status == "CONTRACT_CREATED" for status in required_states):
+    elif any(status in {"CONTRACT_CREATED", "GENERATING"} for status in required_states):
         set_state["status"] = "MODULES_GENERATING"
         set_state["next_action"] = "GENERATE_NEXT_MODULE"
     elif set_state.get("status") not in {"SET_PLAN_DRAFT", "PLAN_APPROVED"}:
@@ -162,13 +173,19 @@ def main() -> int:
         set_state["next_action"] = "MATERIALIZE_OR_ACTIVATE_MODULE_CONTRACT"
 
     write_json(set_root / "SET_STATE.json", set_state)
-    update_product_summary(product_state, set_state)
-    write_json(root / "PRODUCT_STATE.json", product_state)
     counts: dict[str, int] = {}
     for item in states:
         counts[item.get("status", "UNKNOWN")] = counts.get(item.get("status", "UNKNOWN"), 0) + 1
-    print(f"SYNC  set={args.set_id} status={set_state['status']} modules={counts}")
+    if not quiet:
+        print(f"SYNC  set={args.set_id} status={set_state['status']} modules={counts}")
     return 0
+
+
+def synchronize(root, set_id):
+    """Reconcile derived module states inside the caller's current transaction."""
+    from types import SimpleNamespace
+    with transaction(root):
+        return execute(SimpleNamespace(package=root, set_id=set_id), argparse.ArgumentParser(), quiet=True)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Register a clean render and aligned overall mask without copying source files."""
+import sys
+from pathlib import Path
 
 import argparse
-import hashlib
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
+from project_store import read_json as store_read, write_json as store_write, digest as store_digest, transaction
 
 
 def safe(root, value):
@@ -19,11 +23,7 @@ def safe(root, value):
 
 
 def sha256(path):
-    value = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+    return store_digest(path)
 
 
 def main():
@@ -38,10 +38,15 @@ def main():
     parser.add_argument("--normal")
     parser.add_argument("--model-version")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     root = args.package.resolve()
     index_path = root / "index.json"
     try:
-        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index = store_read(index_path)
         rgb, mask = safe(root, args.rgb), safe(root, args.mask)
     except (OSError, json.JSONDecodeError, ValueError) as error:
         parser.error(str(error))
@@ -57,7 +62,7 @@ def main():
     if any(isinstance(item, dict) and item.get("template_id") == template_id for item in templates):
         parser.error("template-id 已存在；请新建版本而不要覆盖")
     templates.append(record)
-    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store_write(index_path, index)
     print(f"REGISTER  {template_id}（初始状态 provisional，人工复核后才可用于锁定）")
     return 0
 

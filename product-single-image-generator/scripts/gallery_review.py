@@ -1,7 +1,7 @@
 """Derive the Gallery opening-pair approval gate from existing candidate records."""
+from project_store import read_json as store_read
 
 import hashlib
-import json
 import re
 
 
@@ -27,7 +27,7 @@ def _file(root, name):
 
 
 def _read(path):
-    return json.loads(path.read_text())
+    return store_read(path)
 
 
 def opening_review_status(root, plan, state, product):

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from set_common import SAFE_ID, load_json, plan_modules, write_json
+from project_store import transaction
 from design_store import catalog_at, resolve_design
 
 
@@ -25,6 +26,11 @@ def main():
     parser.add_argument("--channel", choices=("gallery", "a-plus"))
     parser.add_argument("--order", help="comma-separated Gallery image IDs or A+ page-module IDs")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     if not SAFE_ID.fullmatch(args.set_id):
         parser.error("unsafe set-id")
     root = args.package.resolve()

@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-30",
+  "source_base": "1159ea8",
+  "change": "project-local SQLite production runtime",
+  "storage": {
+    "database": "PROJECT.sqlite3",
+    "schema_version": 1,
+    "transaction": "BEGIN IMMEDIATE",
+    "tables": [
+      "product",
+      "entities",
+      "sets",
+      "modules",
+      "records",
+      "generation_claims"
+    ],
+    "json_addresses": "logical database addresses; no live duplicate files",
+    "files_retained": [
+      "original images/evidence",
+      "index.json and commercial intake sources",
+      "identity-anchor and optional geometry assets",
+      "generated images"
+    ]
+  },
+  "behaviour": [
+    "candidate decisions and module/set projection commit atomically",
+    "set summaries derived from set rows",
+    "external generation uses committed task claims outside DB write lock",
+    "duplicate claims refused; interrupted raw/final outputs recovered without regeneration",
+    "explicit confirmed tool failures retain attempt and require bounded retry",
+    "standalone and set candidate registration use shared service",
+    "legacy import preserves pinned record bytes and candidate/QA history; original JSON archived",
+    "JSON exports are snapshots, not a second authority"
+  ],
+  "verification": {
+    "regression_command": "python3 -B -m unittest discover -s product-amazon-image-set-generator/scripts/tests -p 'test_*.py'",
+    "python": "/Users/lxe-3/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "total": 202,
+    "passed": 200,
+    "skipped": 2,
+    "skip_reason": "optional real-image composition benchmarks not configured",
+    "new_database_tests": 13,
+    "additional_migration_check": "13 database tests rerun after adding accepted-QA migration/resynchronization check; passed",
+    "scale": {
+      "images": 30,
+      "flow": [
+        "prepare",
+        "claim",
+        "record",
+        "next"
+      ],
+      "claimed_packet_bytes": [
+        4915,
+        4961
+      ],
+      "status_bytes": [
+        358,
+        461
+      ]
+    },
+    "skill_entrypoints": 3,
+    "python_ast_files": 44,
+    "skill_local_links": 139,
+    "cli_help": 5,
+    "static_checks": [
+      "F401",
+      "F811",
+      "F821",
+      "F822",
+      "F823",
+      "E9",
+      "git diff --check"
+    ]
+  },
+  "limits": {
+    "image_generation_performed": false,
+    "real_image_validation_performed": false,
+    "human_visual_acceptance": false,
+    "installation_archive_rebuilt": false,
+    "existing_product_projects_migrated": false
+  },
+  "preserved_work": [
+    "pre-existing CHANGELOG edits",
+    "deliverables/product-image-skills-validation-20261022.json",
+    "deleted docs/product-evidence-generalization-design.md",
+    "untracked deliverables/product-image-skills-validation-20261022-0.1.15.json",
+    "existing dist archives"
+  ]
+}

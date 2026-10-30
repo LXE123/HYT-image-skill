@@ -9,6 +9,9 @@ from set_common import GALLERY_TARGET_IMAGES, default_modules, generation_mode_e
 from quality_rules import compile_prompt
 
 
+
+from project_store import read_bytes as store_bytes
+
 class GalleryFrameworkTest(unittest.TestCase):
     def fixture(self):
         f = fixtures.APlusLayoutTest()
@@ -86,10 +89,10 @@ class GalleryFrameworkTest(unittest.TestCase):
         f = self.fixture()
         f.run_script('init_visual_set.py', '--set-id', 'saved-nine', '--deliverable', 'gallery', '--count', '9')
         folder = f.root / 'visual_sets/saved-nine'
-        before = {name: (folder / name).read_bytes() for name in ('SET_PLAN.json', 'SET_STATE.json')}
+        before = {name: store_bytes(folder / name) for name in ('SET_PLAN.json', 'SET_STATE.json')}
         f.run_script('init_visual_set.py', '--set-id', 'saved-nine', '--deliverable', 'gallery', success=False)
         for name, original in before.items():
-            self.assertEqual((folder / name).read_bytes(), original)
+            self.assertEqual(store_bytes(folder / name), original)
         self.assertEqual(load_json(folder / 'SET_PLAN.json')['quantity_policy']['selected_counts']['AMAZON_GALLERY'], 9)
 
     def test_upright_pose_is_local_to_opening_pair_and_reaches_both_prompt_formats(self):

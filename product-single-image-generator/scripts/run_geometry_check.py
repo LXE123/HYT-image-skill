@@ -2,10 +2,10 @@
 """Run integrated same-view geometry QA and record its summary in product state."""
 
 from __future__ import annotations
+from project_store import read_json as store_read, write_json as store_write, digest as store_digest, exists as store_exists, transaction
 
 from structure_state import contract_state_errors
 import argparse
-import hashlib
 import json
 import re
 import shutil
@@ -20,27 +20,19 @@ STATUS_EXIT = {"AUTO_PASSED": 0, "REJECTED": 2, "REVIEW_REQUIRED": 3, "REVIEW_RE
 
 
 def digest(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+    return store_digest(path)
 
 
 def load_json(path: Path) -> dict:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError(f"{path.name} must contain a JSON object")
-    return value
+    return store_read(path)
 
 
 def write_json(path: Path, value: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return store_write(path, value)
 
 
 def write_new_json(path: Path, value: dict) -> None:
-    if path.exists():
+    if store_exists(path):
         raise FileExistsError(f"immutable report already exists: {path}")
     write_json(path, value)
 
@@ -91,6 +83,14 @@ def edges(mask):
 
 
 def record_state(root: Path, state: dict, contract: dict, contract_path: Path, candidate_path: Path, result: dict) -> None:
+    with transaction(root):
+        state = store_read(root / "PRODUCT_STATE.json")
+        if contract_state_errors(root, contract):
+            raise ValueError("structure changed during geometry analysis; review current evidence")
+        _record_state(root, state, contract, contract_path, candidate_path, result)
+
+
+def _record_state(root, state, contract, contract_path, candidate_path, result):
     report = result.get("report") or f"qa/geometry/reports/{result['run_id']}/{result['candidate_id']}/result.json"
     summary = {
         "run_id": result["run_id"],
@@ -157,7 +157,7 @@ def record_state(root: Path, state: dict, contract: dict, contract_path: Path, c
 
 
 def reuse_report(root: Path, state: dict, contract: dict, contract_path: Path, candidate_path: Path, result_path: Path, candidate_hash: str, config_hash: str | None) -> int | None:
-    if not result_path.exists():
+    if not store_exists(result_path):
         return None
     try:
         result = load_json(result_path)
@@ -342,10 +342,10 @@ def main() -> int:
     registration_dir = root / "qa" / "geometry" / "registered" / run_id / candidate_id
     registration_dir.mkdir(parents=True, exist_ok=True)
     copied = registration_dir / candidate_path.name
-    if copied.exists() and digest(copied) != candidate_hash:
+    if store_exists(copied) and digest(copied) != candidate_hash:
         print("Candidate ID is already registered to different file content")
         return 4
-    if not copied.exists():
+    if not store_exists(copied):
         shutil.copy2(candidate_path, copied)
     try:
         rgb = np.asarray(Image.open(candidate_path).convert("RGB"))
@@ -406,7 +406,7 @@ def main() -> int:
         "measurements": rows,
     }
     registration_record = registration_dir / "record.json"
-    if registration_record.exists():
+    if store_exists(registration_record):
         try:
             existing_registration = load_json(registration_record)
         except (OSError, ValueError, json.JSONDecodeError) as error:

@@ -1,17 +1,17 @@
 """State transfer tests with generic synthetic structures; no claimed pixel accuracy."""
 import copy
 import json
-from pathlib import Path
-import sys
 import unittest
 
 import test_a_plus_layout as fixtures
 from set_common import load_json, sha256, write_json
-from context_store import load_contract
-from quality_rules import focused_prompt, compile_prompt, observation_errors, qa_errors, review_status, review_binding, required_checks
+from quality_rules import focused_prompt, compile_prompt, observation_errors, review_status, review_binding, required_checks
 from structure_state import dependency_errors, structure_requirements, value_hash
 from revise_structure_state import apply_change
 
+
+
+from project_store import read_bytes as store_bytes
 
 class StructureStateTest(unittest.TestCase):
     def setUp(self):
@@ -45,12 +45,12 @@ class StructureStateTest(unittest.TestCase):
         self.assertFalse(result['visual_acceptance'])
 
     def test_stale_delta_and_stale_state_do_not_write(self):
-        before = (self.root/'PRODUCT_STATE.json').read_bytes()
+        before = store_bytes(self.root/'PRODUCT_STATE.json')
         with self.assertRaises(ValueError):
             apply_change(self.root, self.delta(), 'wrong')
         bad = self.delta(); bad['updates'][0]['expected_lock_sha256'] = 'wrong'
         with self.assertRaises(ValueError): self.apply(bad)
-        self.assertEqual(before, (self.root/'PRODUCT_STATE.json').read_bytes())
+        self.assertEqual(before, store_bytes(self.root/'PRODUCT_STATE.json'))
 
     def test_unregistered_or_changed_evidence_cannot_become_current_truth(self):
         for path in ['candidates/generated.png', '../outside.png']:
@@ -92,7 +92,7 @@ class StructureStateTest(unittest.TestCase):
         for check in spec['quality_contract']['structure_checks']: check['lock_ids'] = ['other']
         write_json(spec_path,spec)
         self.f.run_script('validate_set_plan.py','--set-id','aplus','--approve')
-        plan_bytes = (self.f.folder/'SET_PLAN.json').read_bytes()
+        plan_bytes = store_bytes(self.f.folder/'SET_PLAN.json')
         self.apply()
         result = json.loads(self.f.run_script('set_runtime.py','--set-id','aplus','next-generation').stdout)
         self.assertEqual(result['current']['module_id'], 'a-plus-02')
@@ -100,7 +100,7 @@ class StructureStateTest(unittest.TestCase):
         self.assertIn('Unrelated outer profile', packet['prompt'])
         self.assertNotIn('inner panel', packet['prompt'])
         self.f.run_script('set_runtime.py','--set-id','aplus','prepare','--module-id','a-plus-01', success=False)
-        self.assertEqual(plan_bytes, (self.f.folder/'SET_PLAN.json').read_bytes())
+        self.assertEqual(plan_bytes, store_bytes(self.f.folder/'SET_PLAN.json'))
         rows = load_json(self.f.folder/'SET_STATE.json')['modules']
         self.assertEqual(rows[0]['status'], 'BLOCKED')
         self.assertNotEqual(rows[1]['status'], 'BLOCKED')
@@ -146,10 +146,10 @@ class StructureStateTest(unittest.TestCase):
         self.assertEqual(newstate['candidates'],state['candidates'])
 
     def test_missing_feedback_report_does_not_write(self):
-        before = (self.root/'PRODUCT_STATE.json').read_bytes()
+        before = store_bytes(self.root/'PRODUCT_STATE.json')
         change = self.delta();change['source_report']='qa/missing.json'
         with self.assertRaises((ValueError,OSError)):self.apply(change)
-        self.assertEqual(before,(self.root/'PRODUCT_STATE.json').read_bytes())
+        self.assertEqual(before,store_bytes(self.root/'PRODUCT_STATE.json'))
 
     def test_legacy_version_bump_does_not_hide_changed_lock_content(self):
         self.apply()

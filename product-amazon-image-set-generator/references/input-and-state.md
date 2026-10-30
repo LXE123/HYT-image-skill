@@ -1,5 +1,7 @@
 # Input and set-state model
 
+Production state, plans, snapshots, contracts and visual reports are records in `PROJECT.sqlite3`. Names below are query addresses; see [database runtime](../../product-single-image-generator/references/database-runtime.md). Original evidence and commercial source files stay on disk.
+
 All paths are relative to the shared product root `<system Desktop>/ProductVisualWorkspace/products/<product_id>/<version>/`.
 
 ## Source precedence
@@ -94,6 +96,6 @@ Statuses:
 - `COMPLETE`
 - `BLOCKED`
 
-`PRODUCT_STATE.json.visual_sets` stores only a summary pointer. Full module history stays in `SET_STATE.json`.
+`PRODUCT_STATE.json.visual_sets` is a query projection derived from set rows, not another saved summary. Module history belongs to the corresponding set/module rows.
 
-For routine execution query `set_runtime.py ... next`; do not load these full files into the conversation. New plan schema 2 uses a compact module index, separate per-image specs and one pinned template catalog. See [state-handoff.md](state-handoff.md). Module state may include `attempt`, `attempt_history`, candidate/contract pointers and accepted output hashes. Attempt history contains decisions and pointers, not prompts or review narratives. Product candidate records commit before the derived set summary, allowing `sync` to recover interrupted updates.
+For routine execution query `set_runtime.py ... next`; do not load these full files into the conversation. New plan schema 2 uses a compact module index, separate per-image specs and one pinned template catalog. See [state-handoff.md](state-handoff.md). Module state may include `attempt`, `attempt_history`, candidate/contract pointers and accepted output hashes. Attempt history contains decisions and pointers, not prompts or review narratives. Candidate decisions and derived set/module statuses now commit together in one SQLite transaction; `sync` reconciles evidence/QA changes rather than repairing a split commit.

@@ -1,4 +1,5 @@
 """Current structure dependencies; semantic facts are authored from evidence, not inferred here."""
+from project_store import read_json as store_read, exists as store_exists
 
 import hashlib
 import json
@@ -31,9 +32,9 @@ def dependency_errors(state, required_ids, expected, version=None):
 
 def contract_state_errors(root, contract):
     path = Path(root) / "PRODUCT_STATE.json"
-    if not path.is_file():
+    if not store_exists(path):
         return ["current PRODUCT_STATE.json is missing"]
-    state = json.loads(path.read_text())
+    state = store_read(path)
     # Legacy contracts without a lock binding retain their previous review path.
     if "identity_lockset_version" not in contract and "resolved_identity_locks" not in contract:
         return []

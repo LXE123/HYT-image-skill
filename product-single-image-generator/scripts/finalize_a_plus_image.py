@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Crop and resample a generated original to an exact 1464x600 PNG; never overwrite."""
+from project_store import read_json as store_read, digest as store_digest, exists as store_exists
 
 import argparse
-import hashlib
 from io import BytesIO
 import json
 import math
@@ -24,7 +24,7 @@ def image_tools():
 
 
 def sha256(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return store_digest(path)
 
 
 def crop_geometry(size, keep_box=None):
@@ -120,7 +120,7 @@ def crop_context(root, contract_path, report_path, source, keep_box=None):
     source.relative_to(root)
     paths = [file_at(root, str(Path(p).resolve().relative_to(root)) if Path(p).is_absolute() else str(p)) for p in (contract_path, report_path)]
     contract = load_contract(root, paths[0])
-    report = json.loads(paths[1].read_text())
+    report = store_read(paths[1])
     if not isinstance(report, dict):
         raise ValueError('source review must be a QA JSON object')
     source_hash = sha256(source)
@@ -138,7 +138,7 @@ def finalize(source, output, keep_box=None, allow_upscale=False, *, package=None
     source, output = Path(source).resolve(), Path(output).resolve()
     if not source.is_file():
         raise ValueError('generated original does not exist')
-    if source == output or output.exists():
+    if source == output or store_exists(output):
         raise ValueError('keep the generated original; output must be a new, separate PNG file')
     if output.suffix.lower() != '.png':
         raise ValueError('A+ code export writes a .png file')

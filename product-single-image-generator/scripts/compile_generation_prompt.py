@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Compile a draft's evidence-backed instructions before candidate generation."""
+from project_store import read_json as store_read, write_json as store_write, exists as store_exists, transaction
 
 import argparse
 import json
@@ -16,16 +17,21 @@ def main():
     parser.add_argument("package", type=Path)
     parser.add_argument("--contract", required=True)
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     root = args.package.resolve()
     try:
         path = file_at(root, args.contract)
         path.relative_to(root / "runs")
-        contract = json.loads(path.read_text())
-        state = json.loads((root / "PRODUCT_STATE.json").read_text())
-        index = json.loads((root / "index.json").read_text())
+        contract = store_read(path)
+        state = store_read(root / "PRODUCT_STATE.json")
+        index = store_read(root / "index.json")
         if contract.get("visual_set"):
             raise ValueError("set contracts are compiled at materialization; revise the set plan instead")
-        if (root / contract["output_path"]).exists() or any(x.get("candidate_id") == contract.get("candidate_id") for x in state.get("candidates", [])):
+        if store_exists(root / contract["output_path"]) or any(x.get("candidate_id") == contract.get("candidate_id") for x in state.get("candidates", [])):
             raise ValueError("candidate exists or was registered; create a replacement contract")
         locks = {x["lock_id"]: x for x in state.get("identity_lockset", {}).get("locks", [])}
         selected = [locks[x] for x in contract.get("required_lock_ids", []) if x in locks]
@@ -41,7 +47,7 @@ def main():
             raise ValueError("; ".join(errors))
         contract["resolved_identity_locks"] = [locks[x] for x in contract["required_lock_ids"]]
         contract["generation_prompt"] = compile_prompt(contract)
-        path.write_text(json.dumps(contract, ensure_ascii=False, indent=2) + "\n")
+        store_write(path, contract)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         parser.error(str(exc))
     print(f"COMPILE  {args.contract}; inspect generation_prompt and attach referenced images to the generator")

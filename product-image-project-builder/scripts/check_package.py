@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """Validate independent product evidence and correction supplements."""
+import sys
+from pathlib import Path
 
 import argparse
-import hashlib
 import json
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
+from project_store import read_json as store_read, write_json as store_write, digest as store_digest, transaction
 
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 SOURCE_TYPES = {"REAL_PHOTO", "DESIGN_RENDER", "CAD_RENDER", "DETAIL"}
 
 
 def sha256(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+    return store_digest(path)
 
 
 def resolve_file(root: Path, value: object) -> Path:
@@ -36,14 +36,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("package", type=Path)
     root = parser.parse_args().package.resolve()
+    with transaction(root):
+        return check(root)
+
+
+def check(root):
     errors, warnings = [], []
     try:
-        index = json.loads((root / "index.json").read_text(encoding="utf-8"))
+        index = store_read(root / "index.json")
     except (OSError, json.JSONDecodeError) as exc:
         print(f"FAIL  无法读取 index.json：{exc}")
         return 1
     try:
-        state = json.loads((root / "PRODUCT_STATE.json").read_text(encoding="utf-8"))
+        state = store_read(root / "PRODUCT_STATE.json")
     except (OSError, json.JSONDecodeError) as exc:
         print(f"FAIL  无法读取 PRODUCT_STATE.json：{exc}")
         return 1
@@ -159,7 +164,7 @@ def main():
         workflow.update({"status": "REFERENCE_CHANGED", "next_action": "RECONCILE_REFERENCE_CHANGE"})
     reference["sha256"] = index_hash
     state["reference_package"] = reference
-    (root / "PRODUCT_STATE.json").write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store_write(root / "PRODUCT_STATE.json", state)
     print(f"PASS  独立产品证据有效，错误补图闭环有效。提醒：{len(warnings)} 项")
     return 0
 

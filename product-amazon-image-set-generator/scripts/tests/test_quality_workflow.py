@@ -16,8 +16,11 @@ SINGLE = AMAZON.parents[1] / "product-single-image-generator" / "scripts"
 sys.path.insert(0, str(AMAZON))
 from set_common import generation_templates, module_stub, sha256, write_json
 from quality_rules import qa_errors, required_checks, validate_quality
-from context_store import MODULE_KEYS, load_contract, plan_modules
+from context_store import MODULE_KEYS, load_contract
 
+
+
+from project_store import read_json as store_read, read_bytes as store_bytes, exists as store_exists
 
 class QualityWorkflowTest(unittest.TestCase):
     def setUp(self):
@@ -138,7 +141,7 @@ class QualityWorkflowTest(unittest.TestCase):
     def prepare_approved_set(self):
         self.run_script(AMAZON, "init_visual_set.py", "--set-id", "set1", "--gallery-count", "1", "--a-plus-count", "0")
         plan_path = self.root / "visual_sets/set1/SET_PLAN.json"
-        plan = json.loads(plan_path.read_text())
+        plan = store_read(plan_path)
         plan.update({"positioning": "Accurate object", "audience": {"primary": "buyers", "motivation": "inspect product"}, "selling_points": {"s_tier": ["accurate view"], "a_tier": [], "b_tier": []}, "visual_system": {"direction": "clean", "palette": ["pink"], "lighting": "soft", "composition": "one product", "retouching": "preserve detail", "forbidden_cues": ["extra parts"]}})
         plan["design_system"] = {"style_id": "precision_tech", "narrative_framework_id": "DIRECT", "rationale": "Synthetic fixture: clear identification of the requested object"}
         if getattr(self, "referenced", False):
@@ -150,7 +153,7 @@ class QualityWorkflowTest(unittest.TestCase):
         write_json(plan_path, plan)
         self.run_script(AMAZON, "validate_set_plan.py", "--set-id", "set1", "--approve")
         self.run_script(AMAZON, "materialize_module_contracts.py", "--set-id", "set1")
-        set_state = json.loads((self.root / "visual_sets/set1/SET_STATE.json").read_text())
+        set_state = store_read(self.root / "visual_sets/set1/SET_STATE.json")
         record = set_state["modules"][0]
         self.run_script(SINGLE, "init_run_records.py", "--run-id", record["run_id"], "--sku", "test", "--view", "front_3q")
         self.run_script(SINGLE, "validate_run_records.py", "--contract", record["contract_path"], "--ready-for-generation")
@@ -159,24 +162,24 @@ class QualityWorkflowTest(unittest.TestCase):
     def accepted_fixture(self):
         record = self.prepare_approved_set()
         contract_path = self.root / record["contract_path"]
-        contract = json.loads(contract_path.read_text())
+        contract = store_read(contract_path)
         image = self.root / contract["output_path"]
         image.write_bytes(b"synthetic candidate fixture; not a real visual pass")
         candidate = {"candidate_id": contract["candidate_id"], "path": contract["output_path"], "sha256": sha256(image), "source_contract": record["contract_path"], "status": "ACCEPTED"}
-        state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        state = store_read(self.root / "PRODUCT_STATE.json")
         state["candidates"] = [candidate]
         write_json(self.root / "PRODUCT_STATE.json", state)
         return record, contract, candidate
 
     def sync(self):
         self.run_script(AMAZON, "sync_set_status.py", "--set-id", "set1")
-        return json.loads((self.root / "visual_sets/set1/SET_STATE.json").read_text())
+        return store_read(self.root / "visual_sets/set1/SET_STATE.json")
 
     def attach_passing_report_fixture(self, record):
         report_relative = "qa/visual/candidate.json"
         self.run_script(SINGLE, "candidate_qa.py", "--contract", record["contract_path"], "--report", report_relative, "--init")
         report_path = self.root / report_relative
-        report = json.loads(report_path.read_text())
+        report = store_read(report_path)
         report["reviewer"] = "synthetic regression fixture (not visual inspection of a real image)"
         for check in report["checks"].values():
             check.update({"status": "PASS", "observation": "synthetic recorded result used to exercise gate"})
@@ -184,7 +187,7 @@ class QualityWorkflowTest(unittest.TestCase):
                                       "required_content": "COMPLETE", "product_regions": [{"label": "synthetic product", "box": [.1,.1,.9,.9]}]})
         write_json(report_path, report)
         self.run_script(SINGLE, "candidate_qa.py", "--contract", record["contract_path"], "--report", report_relative)
-        state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        state = store_read(self.root / "PRODUCT_STATE.json")
         state["candidates"][0]["checks"] = {"visual": {"report_path": report_relative}}
         write_json(self.root / "PRODUCT_STATE.json", state)
         return report_path
@@ -196,13 +199,13 @@ class QualityWorkflowTest(unittest.TestCase):
     def test_review_packet_reuses_linked_report_without_writing_or_accepting(self):
         record, _, _ = self.accepted_fixture()
         self.attach_passing_report_fixture(record)
-        before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}
+        before = {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()}
         result = self.run_script(AMAZON, "set_runtime.py", "--set-id", "set1", "packet", "--module-id", "gallery-01", "--phase", "review")
         packet = json.loads(result.stdout)
         self.assertEqual(packet['review']['execution'], 'REUSE')
         self.assertEqual(packet['review']['status'], 'PASS')
         self.assertEqual(packet['review']['report_path'], 'qa/visual/candidate.json')
-        self.assertEqual(before, {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
+        self.assertEqual(before, {p: store_bytes(p) for p in self.root.rglob('*') if p.is_file()})
 
     def test_complete_report_then_changed_image(self):
         record, contract, candidate = self.accepted_fixture()
@@ -210,7 +213,7 @@ class QualityWorkflowTest(unittest.TestCase):
         self.assertEqual(self.sync()["status"], "COMPLETE")
         image = self.root / candidate["path"]
         image.write_bytes(b"replacement image")
-        state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        state = store_read(self.root / "PRODUCT_STATE.json")
         state["candidates"][0]["sha256"] = sha256(image)
         write_json(self.root / "PRODUCT_STATE.json", state)
         self.assertEqual(self.sync()["status"], "BLOCKED")
@@ -219,7 +222,7 @@ class QualityWorkflowTest(unittest.TestCase):
         record, _, _ = self.accepted_fixture()
         self.attach_passing_report_fixture(record)
         state_path = self.root / "visual_sets/set1/SET_STATE.json"
-        set_state = json.loads(state_path.read_text())
+        set_state = store_read(state_path)
         set_state["modules"] = []
         write_json(state_path, set_state)
         synced = self.sync()
@@ -229,7 +232,7 @@ class QualityWorkflowTest(unittest.TestCase):
     def test_failure_record_blocks_completion(self):
         record, _, _ = self.accepted_fixture()
         path = self.attach_passing_report_fixture(record)
-        report = json.loads(path.read_text())
+        report = store_read(path)
         report["checks"]["structure_topology"] = {"status": "FAIL", "observation": "wrong connector"}
         write_json(path, report)
         self.assertEqual(self.sync()["status"], "BLOCKED")
@@ -243,14 +246,14 @@ class QualityWorkflowTest(unittest.TestCase):
         self.run_script(SINGLE, "init_run_records.py", "--run-id", "single", "--sku", "test", "--view", "front_3q")
         relative = "runs/single/front_3q_generation_contract.json"
         path = self.root / relative
-        contract = json.loads(path.read_text())
+        contract = store_read(path)
         contract["execution_policy"] = copy.deepcopy(self.module["execution_policy"])
         contract.update({"identity_lockset_version": 1, "required_lock_ids": ["shape"], "references": self.module["product_references"], "generation_template": self.module["generation_template"], "quality_contract": self.module["quality_contract"]})
         contract.update({"image_intent": {"sales_task": "Identify the complete sellable product", "buyer_question": "What is included?"}, "creative_brief": copy.deepcopy(self.module["creative_brief"]), "visual_system": {"direction": "Accurate white-background main image", "lighting": "Controlled highlights reveal the actual surface", "typography": "No added lettering"}})
         write_json(path, contract)
         self.run_script(SINGLE, "compile_generation_prompt.py", "--contract", relative)
         self.run_script(SINGLE, "validate_run_records.py", "--contract", relative, "--ready-for-generation")
-        compiled = json.loads(path.read_text())
+        compiled = store_read(path)
         self.assertIn("fixture assembled structure", compiled["generation_prompt"])
         self.assertIn("What is included?", compiled["generation_prompt"])
         self.assertIn(contract["creative_brief"]["visual_device"], compiled["generation_prompt"])
@@ -263,7 +266,7 @@ class QualityWorkflowTest(unittest.TestCase):
         self.run_script(SINGLE, "init_run_records.py", "--run-id", "no-design", "--sku", "test", "--view", "front_3q")
         relative = "runs/no-design/front_3q_generation_contract.json"
         path = self.root / relative
-        contract = json.loads(path.read_text())
+        contract = store_read(path)
         contract["execution_policy"] = copy.deepcopy(self.module["execution_policy"])
         contract.update({"identity_lockset_version": 1, "required_lock_ids": ["shape"], "references": self.module["product_references"], "generation_template": self.module["generation_template"], "quality_contract": self.module["quality_contract"]})
         del contract["creative_brief"]
@@ -272,7 +275,7 @@ class QualityWorkflowTest(unittest.TestCase):
         self.assertIn("creative_brief", result.stderr)
         self.assertIn("image_intent", result.stderr)
         self.assertIn("visual_system", result.stderr)
-        self.assertNotIn("generation_prompt", json.loads(path.read_text()))
+        self.assertNotIn("generation_prompt", store_read(path))
         self.assertTrue({"design_quality", "content_coverage"}.issubset(required_checks(contract)))
 
     def test_non_main_art_direction_reaches_both_prompt_formats(self):
@@ -313,7 +316,7 @@ class QualityWorkflowTest(unittest.TestCase):
     def test_corrupted_prompt_is_blocked_at_preflight(self):
         record = self.prepare_approved_set()
         path = self.root / record["contract_path"]
-        contract = json.loads(path.read_text())
+        contract = store_read(path)
         contract["generation_prompt"] = "invent a different clasp"
         write_json(path, contract)
         self.run_script(SINGLE, "validate_run_records.py", "--contract", record["contract_path"], "--ready-for-generation", success=False)
@@ -333,7 +336,7 @@ class QualityWorkflowTest(unittest.TestCase):
         record, _, _ = self.accepted_fixture()
         self.attach_passing_report_fixture(record)
         path = self.root / record["contract_path"]
-        contract = json.loads(path.read_text())
+        contract = store_read(path)
         contract["inspection_note"] = "changed after review"
         write_json(path, contract)
         self.assertEqual(self.sync()["status"], "BLOCKED")
@@ -345,7 +348,7 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
     def test_contract_is_a_reference_envelope(self):
         row = self.prepare_approved_set()
         path = self.root / row["contract_path"]
-        raw = json.loads(path.read_text())
+        raw = store_read(path)
         self.assertEqual(raw["storage_mode"], "REFERENCED")
         for key in ("generation_template", "quality_contract", "generation_prompt", "resolved_identity_locks", "visual_system"):
             self.assertNotIn(key, raw)
@@ -355,9 +358,9 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
 
     def test_approved_spec_edit_is_blocked(self):
         row = self.prepare_approved_set()
-        plan = json.loads((self.root / "visual_sets/set1/SET_PLAN.json").read_text())
+        plan = store_read(self.root / "visual_sets/set1/SET_PLAN.json")
         path = self.root / plan["modules"][0]["spec_path"]
-        spec = json.loads(path.read_text())
+        spec = store_read(path)
         spec["copy"] = {"title": "unsupported edit"}
         write_json(path, spec)
         self.run_script(SINGLE, "validate_run_records.py", "--contract", row["contract_path"], "--ready-for-generation", success=False)
@@ -365,7 +368,7 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
     def test_shared_template_change_is_blocked(self):
         row = self.prepare_approved_set()
         path = self.root / "visual_sets/set1/TEMPLATES.json"
-        catalog = json.loads(path.read_text())
+        catalog = store_read(path)
         catalog["templates"][0]["prompt_rules"] = ["changed"]
         write_json(path, catalog)
         self.run_script(SINGLE, "validate_run_records.py", "--contract", row["contract_path"], "--ready-for-generation", success=False)
@@ -387,26 +390,26 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
 
     def test_crash_after_image_save_resumes_review(self):
         row = self.prepare_approved_set()
-        raw = json.loads((self.root / row["contract_path"]).read_text())
+        raw = store_read(self.root / row["contract_path"])
         image = self.root / raw["output_path"]
         image.write_bytes(b"saved before the process was interrupted")
         result = self.runtime("prepare")
         self.assertEqual(result["phase"], "review")
-        self.assertEqual(image.read_bytes(), b"saved before the process was interrupted")
+        self.assertEqual(store_bytes(image), b"saved before the process was interrupted")
 
     def test_explicit_retry_keeps_rejected_attempt_and_resumes_same_retry(self):
         row, contract, _ = self.accepted_fixture()
-        state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        state = store_read(self.root / "PRODUCT_STATE.json")
         state["candidates"][0]["status"] = "PENDING_REVIEW"
         write_json(self.root / "PRODUCT_STATE.json", state)
         rejection = self.runtime("record", "--module-id", "gallery-01", "--decision", "REJECTED_TOPOLOGY", "--failure-code", "HARDWARE_STATE")
         self.assertEqual(rejection["current"]["failure_code"], "HARDWARE_STATE")
-        saved = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        saved = store_read(self.root / "PRODUCT_STATE.json")
         self.assertEqual(saved["workflow"]["status"], "REJECTED")
         result = self.runtime("prepare", "--module-id", "gallery-01", "--retry", "--correction", "Preserve the source connector count")
         self.assertEqual(result["attempt"], 2)
         self.assertNotEqual(result["candidate_id"], contract["candidate_id"])
-        self.assertTrue((self.root / row["contract_path"]).exists())
+        self.assertTrue(store_exists(self.root / row["contract_path"]))
         resumed = self.runtime("prepare", "--module-id", "gallery-01")
         self.assertEqual(result, resumed)
         self.assertIn("Preserve the source connector count", resumed["prompt"])
@@ -422,7 +425,7 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
         self.attach_passing_report_fixture(row)
         self.sync()
         self.run_script(AMAZON, "materialize_module_contracts.py", "--set-id", "set1", "--module-id", "gallery-01")
-        state = json.loads((self.root / "visual_sets/set1/SET_STATE.json").read_text())
+        state = store_read(self.root / "visual_sets/set1/SET_STATE.json")
         self.assertEqual(state["modules"][0]["status"], "ACCEPTED")
         self.assertEqual(state["status"], "COMPLETE")
 
@@ -430,20 +433,20 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
         row, _, _ = self.accepted_fixture()
         self.attach_passing_report_fixture(row)
         self.assertEqual(self.sync()["status"], "COMPLETE")
-        index = json.loads((self.root / "index.json").read_text())
+        index = store_read(self.root / "index.json")
         index["new_correction"] = "source changed after approval"
         write_json(self.root / "index.json", index)
         result = self.runtime("next")
         self.assertEqual(result["set_status"], "BLOCKED")
         self.assertEqual(result["next_action"], "RECONCILE_REFERENCE_CHANGE")
-        state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        state = store_read(self.root / "PRODUCT_STATE.json")
         self.assertEqual(state["candidates"][0]["status"], "ACCEPTED")
 
     def test_thirty_images_recover_from_disk_with_bounded_packets(self):
         self.run_script(AMAZON, "init_visual_set.py", "--set-id", "scale", "--mode", "expanded", "--gallery-count", "30", "--a-plus-count", "0")
         folder = self.root / "visual_sets/scale"
-        plan = json.loads((folder / "SET_PLAN.json").read_text())
-        initial_plan_bytes = (folder / "SET_PLAN.json").stat().st_size
+        plan = store_read(folder / "SET_PLAN.json")
+        initial_plan_bytes = len(store_bytes(folder / "SET_PLAN.json"))
         plan.update({"positioning": "test", "audience": {"primary": "buyers", "motivation": "inspect"}, "selling_points": {"s_tier": ["accurate view"], "a_tier": [], "b_tier": []}, "visual_system": {"direction": "clean", "palette": ["pink"], "lighting": "soft", "composition": "one object", "retouching": "preserve", "forbidden_cues": ["extra parts"]}})
         plan["design_system"] = {"style_id": "precision_tech", "narrative_framework_id": "DIRECT", "rationale": "Synthetic scale fixture: stable main-image recognition task"}
         for row in plan["modules"]:
@@ -456,11 +459,13 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
         packet_sizes, status_sizes = [], []
         for sequence in range(1, 31):
             output = self.run_script(AMAZON, "set_runtime.py", "--set-id", "scale", "prepare")
+            prepared = json.loads(output.stdout)
+            output = self.run_script(AMAZON, "set_runtime.py", "--set-id", "scale", "claim", "--module-id", prepared["module_id"])
             work = json.loads(output.stdout)
             self.assertEqual(work["module_id"], f"gallery-{sequence:02d}")
             packet_sizes.append(len(output.stdout.encode()))
             self.assertNotIn("UNRELATED_HISTORY_SENTINEL", output.stdout)
-            state = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+            state = store_read(self.root / "PRODUCT_STATE.json")
             self.assertEqual(len(state["runs"]), sequence)  # Just-in-time contracts only.
             if sequence == 1:
                 state["decision_log"] = [{"old_qa": "UNRELATED_HISTORY_SENTINEL " * 10000}]
@@ -472,14 +477,14 @@ class ReferencedWorkflowTest(QualityWorkflowTest):
             report_relative = f"qa/visual/scale-{sequence}.json"
             report = {"candidate_id": work["candidate_id"], "candidate_sha256": sha256(image), "contract_sha256": sha256(contract_path), "reviewer": "synthetic regression fixture", "inspection_method": "VISUAL_INSPECTION", "checks": {key: {"status": "PASS", "observation": "synthetic result; not real visual inspection"} for key in required_checks(contract)}, "unresolved_items": []}
             write_json(self.root / report_relative, report)
-            self.run_script(AMAZON, "set_runtime.py", "--set-id", "scale", "record", "--module-id", work["module_id"], "--decision", "ACCEPTED", "--report", report_relative, "--human-reviewer", "fixture", "--decision-reference", "synthetic approval fixture")
+            self.run_script(AMAZON, "set_runtime.py", "--set-id", "scale", "record", "--module-id", work["module_id"], "--decision", "ACCEPTED", "--report", report_relative, "--human-reviewer", "fixture", "--decision-reference", "synthetic approval fixture", "--claim-token", work["claim_token"])
             output = self.run_script(AMAZON, "set_runtime.py", "--set-id", "scale", "next")
             status_sizes.append(len(output.stdout.encode()))
             status = json.loads(output.stdout)
             self.assertEqual(status["counts"]["ACCEPTED"], sequence)
         self.assertEqual(status["set_status"], "COMPLETE")
         self.assertEqual(status["next_action"], "NONE")
-        final_product = json.loads((self.root / "PRODUCT_STATE.json").read_text())
+        final_product = store_read(self.root / "PRODUCT_STATE.json")
         self.assertEqual(final_product["workflow"]["status"], "ACCEPTED")
         self.assertTrue(all(x["status"] == "ACCEPTED" for x in final_product["runs"]))
         self.assertLess(max(status_sizes), 1024)

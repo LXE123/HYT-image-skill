@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate a product run contract and advance the active workflow after preflight."""
+from project_store import read_json as store_read, write_json as store_write, transaction
 
 from structure_state import dependency_errors
 from execution_policy import policy_errors
@@ -9,13 +10,14 @@ from pathlib import Path, PurePosixPath
 from quality_rules import compile_prompt, validate_quality
 from context_store import load_contract
 from gallery_review import require_contract_opening_approval
+from project_store import claim_generation
 
 ROLES = {"PRODUCT_EVIDENCE": "PRODUCT_IDENTITY_ONLY", "POSE_ONLY": "POSE_CAMERA_COMPOSITION_LIGHTING_BACKGROUND_ONLY"}
 
 
 def load(path: Path, errors: list[str]) -> dict:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = store_read(path)
         if isinstance(value, dict):
             return value
         errors.append(f"{path.name} 必须是 JSON 对象")
@@ -29,7 +31,7 @@ def safe_relative(value: object) -> bool:
 
 
 def write_json(path: Path, value: dict) -> None:
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return store_write(path, value)
 
 
 
@@ -38,7 +40,15 @@ def main() -> int:
     parser.add_argument("package", type=Path)
     parser.add_argument("--contract", required=True, type=Path)
     parser.add_argument("--ready-for-generation", action="store_true")
+    parser.add_argument("--claim", action="store_true", help="claim a standalone candidate before calling the generator")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
+    if args.claim and not args.ready_for_generation:
+        parser.error("--claim requires --ready-for-generation")
     root, errors = args.package.resolve(), []
     state = load(root / "PRODUCT_STATE.json", errors)
     contract_path = args.contract if args.contract.is_absolute() else root / args.contract
@@ -123,13 +133,13 @@ def main() -> int:
             required_locks = contract.get("required_lock_ids")
             locks = {item.get("lock_id"): item for item in lockset.get("locks", []) if isinstance(item, dict)}
             try:
-                manifest = json.loads((root / "qa/identity_anchors/index.json").read_text(encoding="utf-8"))
+                manifest = store_read(root / "qa/identity_anchors/index.json")
                 anchors = {item.get("anchor_id"): item for item in manifest.get("anchors", []) if isinstance(item, dict)}
             except (OSError, json.JSONDecodeError):
                 anchors = {}
             templates = {}
             try:
-                package_index = json.loads((root / "index.json").read_text(encoding="utf-8"))
+                package_index = store_read(root / "index.json")
                 templates = {item.get("template_id"): item for item in package_index.get("render_templates", []) if isinstance(item, dict)}
             except (OSError, json.JSONDecodeError):
                 errors.append("生成前检查找不到有效的 index.json")
@@ -184,6 +194,9 @@ def main() -> int:
             if isinstance(run, dict) and run.get("run_id") == run_id:
                 run["status"] = "GENERATION_READY"
         write_json(root / "PRODUCT_STATE.json", state)
+        if args.claim:
+            token = claim_generation(root, relative_contract, candidate_id)
+            print(json.dumps({"candidate_id": candidate_id, "claim_token": token}, ensure_ascii=False))
     print(f"PASS  合同与状态一致：run={run_id}，sku={contract.get('sku')}，view={contract.get('target_view')}")
     return 0
 

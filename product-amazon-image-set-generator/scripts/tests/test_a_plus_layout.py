@@ -14,9 +14,12 @@ from a_plus_layout import design_handoff, image_membership, layout_errors, layou
 from set_common import default_modules, generation_mode_errors, load_json, plan_modules, sha256, store_module_spec, write_json
 from context_store import load_contract
 from quality_rules import compile_prompt, qa_errors, required_checks, review_binding
-from finalize_a_plus_image import assess_crop, finalize, export_errors
+from finalize_a_plus_image import assess_crop, finalize
 from PIL import Image
 
+
+
+from project_store import write_json as store_write, read_bytes as store_bytes, exists as store_exists
 
 class APlusLayoutTest(unittest.TestCase):
     def setUp(self):
@@ -51,7 +54,7 @@ class APlusLayoutTest(unittest.TestCase):
     def write_final_candidate(self, packet):
         raw = Path(packet['raw_output_path'])
         raw.parent.mkdir(parents=True, exist_ok=True)
-        if not raw.exists():
+        if not store_exists(raw):
             Image.new('RGB', (1536, 1024), '#c9b7a1').save(raw)
         contract_path = self.root/packet['contract_path']
         contract = load_contract(self.root, contract_path)
@@ -161,10 +164,10 @@ class APlusLayoutTest(unittest.TestCase):
             if row["module_id"] in hashes:
                 self.assertEqual(sha256(self.root / row["spec_path"]), hashes[row["module_id"]])
         self.assertEqual(layout_errors(changed, plan_modules(self.root, changed)), [])
-        before = (self.folder / "SET_PLAN.json").read_bytes()
+        before = store_bytes(self.folder / "SET_PLAN.json")
         self.run_script("add_a_plus_image.py", "--set-id", "aplus", "--page-module-id", "aplus-craftsmanship", "--image-id", "edge-detail",
                         "--template-id", "hardware_static", "--target-view", "edge", "--sales-task", "Edge", "--buyer-question", "Edge?", success=False)
-        self.assertEqual((self.folder / "SET_PLAN.json").read_bytes(), before)
+        self.assertEqual(store_bytes(self.folder / "SET_PLAN.json"), before)
 
     def test_new_group_is_inserted_without_renaming_existing_images(self):
         self.initialize()
@@ -190,11 +193,11 @@ class APlusLayoutTest(unittest.TestCase):
         self.assertNotIn("aplus-lifestyle", packet["prompt"])
         self.assertNotIn("SUNFWR", packet["prompt"])
         self.assertNotIn("cowhide", packet["prompt"])
-        before = (self.folder / "SET_PLAN.json").read_bytes()
+        before = store_bytes(self.folder / "SET_PLAN.json")
         self.run_script("add_a_plus_image.py", "--set-id", "aplus", "--page-module-id", "aplus-craftsmanship", "--image-id", "late-detail",
                         "--template-id", "hardware_static", "--target-view", "edge", "--sales-task", "Edge", "--buyer-question", "Edge?", success=False)
-        self.assertEqual((self.folder / "SET_PLAN.json").read_bytes(), before)
-        self.assertFalse((self.folder / "modules/late-detail.json").exists())
+        self.assertEqual(store_bytes(self.folder / "SET_PLAN.json"), before)
+        self.assertFalse(store_exists(self.folder / "modules/late-detail.json"))
         handoff = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "handoff").stdout)
         self.assertEqual(handoff["assembly_owner"], "DESIGN_TEAM")
         self.assertEqual(sum(len(x["images"]) for x in handoff["page_modules"]), 9)
@@ -230,12 +233,12 @@ class APlusLayoutTest(unittest.TestCase):
         for count in (30, 40):
             result = self.run_script("init_visual_set.py", "--set-id", f"blocked-{count}", "--gallery-count", str(count), "--a-plus-count", "0", success=False)
             self.assertIn("explicit --mode expanded", result.stderr)
-            self.assertFalse((self.root / f"visual_sets/blocked-{count}").exists())
-        self.assertFalse((self.root / "commercial").exists())
+            self.assertFalse(store_exists(self.root / f"visual_sets/blocked-{count}"))
+        self.assertFalse(store_exists(self.root / "commercial"))
         self.run_script("init_visual_set.py", "--set-id", "forty", "--mode", "expanded", "--gallery-count", "0", "--a-plus-count", "40")
         self.assertEqual(len(load_json(self.root / "visual_sets/forty/SET_PLAN.json")["modules"]), 40)
         self.run_script("init_visual_set.py", "--set-id", "too-many", "--mode", "expanded", "--gallery-count", "41", "--a-plus-count", "0", success=False)
-        self.assertFalse((self.root / "visual_sets/too-many").exists())
+        self.assertFalse(store_exists(self.root / "visual_sets/too-many"))
 
     def test_small_explicit_channels_and_profile_override_take_precedence(self):
         self.run_script("init_visual_set.py", "--set-id", "gallery-only", "--gallery-count", "1", "--a-plus-count", "0")
@@ -260,13 +263,13 @@ class APlusLayoutTest(unittest.TestCase):
         plan["a_plus_layout"]["page_modules"][2]["image_ids"].extend(x["module_id"] for x in extra)
         plan["modules"] = extra + plan["modules"]
         write_json(self.folder / "SET_PLAN.json", plan)
-        before = (self.folder / "SET_PLAN.json").read_bytes()
+        before = store_bytes(self.folder / "SET_PLAN.json")
         args = ("--set-id", "aplus", "--page-module-id", "aplus-craftsmanship", "--image-id", "thirtieth",
                 "--template-id", "hardware_static", "--target-view", "edge", "--sales-task", "Edge", "--buyer-question", "Which edge?")
         blocked = self.run_script("add_a_plus_image.py", *args, success=False)
         self.assertIn("--activate-expanded", blocked.stderr)
-        self.assertEqual((self.folder / "SET_PLAN.json").read_bytes(), before)
-        self.assertFalse((self.folder / "modules/thirtieth.json").exists())
+        self.assertEqual(store_bytes(self.folder / "SET_PLAN.json"), before)
+        self.assertFalse(store_exists(self.folder / "modules/thirtieth.json"))
         self.run_script("add_a_plus_image.py", *args, "--activate-expanded")
         changed = load_json(self.folder / "SET_PLAN.json")
         self.assertEqual(changed["generation_mode"], "expanded")
@@ -282,17 +285,17 @@ class APlusLayoutTest(unittest.TestCase):
         plan = self.initialize()
         plan.pop("generation_mode")
         write_json(self.folder / "SET_PLAN.json", plan)
-        before = (self.folder / "SET_PLAN.json").read_bytes()
+        before = store_bytes(self.folder / "SET_PLAN.json")
         status = json.loads(self.run_script("set_runtime.py", "--set-id", "aplus", "next").stdout)
         self.assertEqual(status["total"], 9)
         self.assertNotIn("generation_mode", status)
-        self.assertEqual((self.folder / "SET_PLAN.json").read_bytes(), before)
+        self.assertEqual(store_bytes(self.folder / "SET_PLAN.json"), before)
 
     def test_unqualified_request_has_no_implicit_channel_or_side_effects(self):
         result = self.run_script("init_visual_set.py", "--set-id", "ambiguous", success=False)
         self.assertIn("choose --deliverable", result.stderr)
-        self.assertFalse((self.root / "visual_sets").exists())
-        self.assertFalse((self.root / "commercial").exists())
+        self.assertFalse(store_exists(self.root / "visual_sets"))
+        self.assertFalse(store_exists(self.root / "commercial"))
 
     def test_requested_channels_keep_separate_gallery_and_a_plus_defaults(self):
         for scope, expected in (("gallery", (11, 0)), ("a-plus", (0, 13)), ("both", (11, 13))):
@@ -356,7 +359,7 @@ class APlusLayoutTest(unittest.TestCase):
         self.assertIn('Für Größe wählen – äöü', packet['prompt'])
         snapshot = load_json(self.folder / 'INPUT_SNAPSHOT.json')
         self.assertEqual(sha256(path), snapshot['design_brief']['sha256'])
-        self.assertFalse((self.folder / 'DESIGN_INPUT.json').exists())
+        self.assertFalse(store_exists(self.folder / 'DESIGN_INPUT.json'))
         raw = load_json(self.root / packet['contract_path'])
         self.assertEqual(set(raw['bindings']), {'plan'})
         # Older envelopes remain readable, but contradictory snapshot bindings fail.
@@ -408,8 +411,8 @@ class APlusLayoutTest(unittest.TestCase):
                 brief['modules'][0]['copy'][0]['required_fact_ids'] = ['missing']
             write_json(path, brief)
             self.run_script('init_visual_set.py', '--set-id', case, '--design-input', str(path), success=False)
-            self.assertFalse((self.root / 'visual_sets').exists())
-            self.assertFalse((self.root / 'commercial').exists())
+            self.assertFalse(store_exists(self.root / 'visual_sets'))
+            self.assertFalse(store_exists(self.root / 'commercial'))
 
     def test_all_a_plus_paths_reject_other_canvas_while_gallery_keeps_its_own_format(self):
         layout, tasks = profile_drafts(9)
@@ -424,19 +427,19 @@ class APlusLayoutTest(unittest.TestCase):
     def test_brief_count_conflict_undecomposed_groups_and_unknown_evidence_create_no_set(self):
         path, brief = self.write_ready_design_brief()
         self.run_script('init_visual_set.py', '--set-id', 'conflict', '--design-input', str(path), '--count', '13', success=False)
-        self.assertFalse((self.root / 'visual_sets').exists())
+        self.assertFalse(store_exists(self.root / 'visual_sets'))
         brief['job']['target_image_count'] = 13
         brief['modules'] = brief['modules'][:7]
         # An old cached readiness label cannot override the actual target/tasks.
         brief['image_plan'] = {'status': 'READY_FOR_DESIGN', 'planned_image_count': 13}
         write_json(path, brief)
         self.run_script('init_visual_set.py', '--set-id', 'short', '--design-input', str(path), success=False)
-        self.assertFalse((self.root / 'visual_sets').exists())
+        self.assertFalse(store_exists(self.root / 'visual_sets'))
         path, brief = self.write_ready_design_brief()
         brief['modules'][0]['product_evidence_ids'] = ['unknown']
         write_json(path, brief)
         self.run_script('init_visual_set.py', '--set-id', 'bad-source', '--design-input', str(path), success=False)
-        self.assertFalse((self.root / 'visual_sets').exists())
+        self.assertFalse(store_exists(self.root / 'visual_sets'))
 
     def test_imported_tasks_do_not_depend_on_a_second_runtime_brief_copy(self):
         path, brief = self.write_ready_design_brief()
@@ -444,7 +447,7 @@ class APlusLayoutTest(unittest.TestCase):
         self.folder = self.root / 'visual_sets/aplus'
         plan = load_json(self.folder / 'SET_PLAN.json')
         self.fill_for_approval(plan)
-        path.write_text('{}')
+        store_write(path, {})
         self.run_script('validate_set_plan.py', '--set-id', 'aplus', '--approve')
         packet = json.loads(self.run_script('set_runtime.py', '--set-id', 'aplus', 'prepare', '--module-id', 'custom-08').stdout)
         self.assertIn('Für Größe wählen – äöü', packet['prompt'])
@@ -462,12 +465,12 @@ class APlusLayoutTest(unittest.TestCase):
             task['content_group_id'] = 'intro'
         write_json(path, brief)
         self.run_script('init_visual_set.py', '--set-id', 'unmapped', '--design-input', str(path), success=False)
-        self.assertFalse((self.root / 'visual_sets').exists())
+        self.assertFalse(store_exists(self.root / 'visual_sets'))
         path, brief = self.write_ready_design_brief()
         brief['content_groups'].append(brief['content_groups'][0])
         write_json(path, brief)
         self.run_script('init_visual_set.py', '--set-id', 'duplicate-group', '--design-input', str(path), success=False)
-        self.assertFalse((self.root / 'visual_sets').exists())
+        self.assertFalse(store_exists(self.root / 'visual_sets'))
 
     def test_authorized_local_addition_updates_selected_count(self):
         self.initialize(9)
@@ -688,14 +691,14 @@ class APlusLayoutTest(unittest.TestCase):
 
     def test_catalog_filter_and_selection_resolve_one_executable_recipe(self):
         self.initialize()
-        before = (self.folder / "SET_PLAN.json").read_bytes()
+        before = store_bytes(self.folder / "SET_PLAN.json")
         catalog = json.loads(self.run_script("configure_design.py", "--set-id", "aplus", "catalog", "--template-id", "material_macro").stdout)
-        self.assertEqual((self.folder / "SET_PLAN.json").read_bytes(), before)
+        self.assertEqual(store_bytes(self.folder / "SET_PLAN.json"), before)
         self.assertTrue(all("material_macro" in x["templates"] for x in catalog["layouts"]))
         self.assertEqual(len(catalog["styles"]), 6)
         self.run_script("configure_design.py", "--set-id", "aplus", "configure", "--style-id", "active_bright", "--framework-id", "JTBD", "--rationale", "Synthetic fixture: recognizable daily use and factual material proof")
         other_spec = self.folder / "modules/a-plus-02.json"
-        other_before = other_spec.read_bytes()
+        other_before = store_bytes(other_spec)
         selected = json.loads(self.run_script("configure_design.py", "--set-id", "aplus", "select", "--module-id", "a-plus-03", "--layout-id", "detail_context", "--story-stage", "proof").stdout)
         self.assertEqual(selected["design_preview"]["style"]["style_id"], "active_bright")
         self.assertEqual(selected["design_preview"]["layout"]["layout_id"], "detail_context")
@@ -704,16 +707,16 @@ class APlusLayoutTest(unittest.TestCase):
         spec = load_json(self.folder / "modules/a-plus-03.json")
         self.assertEqual(spec["quality_contract"]["layout"]["product_box"], [.30, .05, .96, .94])
         self.assertEqual(spec["creative_brief"]["visual_concept"], "")
-        self.assertEqual(other_spec.read_bytes(), other_before)
+        self.assertEqual(store_bytes(other_spec), other_before)
 
     def test_decorative_layout_cannot_be_selected_for_main_product(self):
         self.run_script("init_visual_set.py", "--set-id", "main", "--deliverable", "gallery", "--count", "1")
         self.run_script("configure_design.py", "--set-id", "main", "configure", "--style-id", "dramatic_studio", "--framework-id", "DIRECT", "--rationale", "Synthetic fixture: main image identification")
         path = self.root / "visual_sets/main/modules/gallery-01.json"
-        before = path.read_bytes()
+        before = store_bytes(path)
         result = self.run_script("configure_design.py", "--set-id", "main", "select", "--module-id", "gallery-01", "--layout-id", "editorial_hero", "--story-stage", "single_message", success=False)
         self.assertIn("incompatible", result.stderr)
-        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(store_bytes(path), before)
         selected = json.loads(self.run_script("configure_design.py", "--set-id", "main", "select", "--module-id", "gallery-01", "--layout-id", "main_clean", "--story-stage", "single_message").stdout)
         self.assertIn("white main-image", selected["design_preview"]["style"]["task_treatment"])
         self.assertIsNone(selected["layout_starting_points"]["copy_box"])
@@ -736,16 +739,16 @@ class APlusLayoutTest(unittest.TestCase):
         plan = self.initialize()
         self.fill_for_approval(plan)
         self.run_script("validate_set_plan.py", "--set-id", "aplus", "--approve")
-        original = (self.folder / "SET_PLAN.json").read_bytes()
+        original = store_bytes(self.folder / "SET_PLAN.json")
         self.run_script("configure_design.py", "--set-id", "aplus", "configure", "--style-id", "warm_daily", "--framework-id", "DIRECT", "--rationale", "Rejected approved mutation", success=False)
-        self.assertEqual((self.folder / "SET_PLAN.json").read_bytes(), original)
+        self.assertEqual(store_bytes(self.folder / "SET_PLAN.json"), original)
         catalog_path = self.folder / "DESIGN_PATTERNS.json"
         catalog = load_json(catalog_path)
         catalog["layouts"][0]["composition_rules"] = ["unexpected change"]
         write_json(catalog_path, catalog)
         result = self.run_script("set_runtime.py", "--set-id", "aplus", "prepare", success=False)
         self.assertIn("pinned design catalog changed", result.stderr)
-        self.assertFalse((self.root / "runs").exists())
+        self.assertFalse(store_exists(self.root / "runs"))
 
     def test_unknown_narrative_stage_is_rejected_before_approval(self):
         plan = self.initialize()

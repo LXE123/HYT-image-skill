@@ -11,7 +11,8 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from set_common import MAX_CHANNEL_IMAGES, EXPANDED_MIN_IMAGES, NORMAL_TARGET_IMAGES, GALLERY_TARGET_IMAGES, SAFE_ID, SOURCE_ROLES, default_modules, module_stub, load_contract, load_json, resolve_file, sha256, store_module_spec, update_product_summary, write_json
+from set_common import MAX_CHANNEL_IMAGES, EXPANDED_MIN_IMAGES, NORMAL_TARGET_IMAGES, GALLERY_TARGET_IMAGES, SAFE_ID, SOURCE_ROLES, default_modules, module_stub, load_contract, load_json, resolve_file, sha256, store_module_spec, write_json
+from project_store import exists as store_exists, transaction
 from a_plus_layout import PROFILE_ID, profile_drafts
 from module_language import canonical_role
 
@@ -105,6 +106,11 @@ def main() -> int:
     parser.add_argument("--a-plus-profile", choices=(PROFILE_ID, "none"), help="A+ grouping seed for 9-15 images; none explicitly selects ungrouped templates")
     parser.add_argument("--design-input", type=Path, help="filtered, fully decomposed DESIGN_INPUT.json for one channel")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     brief = None
     if args.design_input:
         try:
@@ -182,7 +188,7 @@ def main() -> int:
         parser.error("product identity baseline and identity lockset must both be READY")
 
     set_root = root / "visual_sets" / args.set_id
-    if (set_root / "SET_STATE.json").exists() or (set_root / "SET_PLAN.json").exists():
+    if store_exists(set_root / "SET_STATE.json") or store_exists(set_root / "SET_PLAN.json"):
         parser.error("set-id already exists; resume it or choose a new revision ID")
     imported_drafts = None
     if brief is not None:
@@ -193,7 +199,7 @@ def main() -> int:
 
     commercial_dir = root / "commercial"
     manifest_path = commercial_dir / "source_manifest.json"
-    if not manifest_path.exists():
+    if not store_exists(manifest_path):
         write_json(manifest_path, {"schema_version": 1, "sources": []})
     try:
         manifest = load_json(manifest_path)
@@ -347,8 +353,6 @@ def main() -> int:
         "next_action": "COMPLETE_COMMERCIAL_INPUTS_AND_PLAN",
     }
     write_json(set_root / "SET_STATE.json", set_state)
-    update_product_summary(product_state, set_state)
-    write_json(root / "PRODUCT_STATE.json", product_state)
     print(f"CREATE  visual set {args.set_id}: {set_root}")
     print(f"SNAPSHOT  accepted={len(accepted_outputs)} excluded={len(excluded_outputs)} commercial_sources={len(normalized_sources)}")
     return 0

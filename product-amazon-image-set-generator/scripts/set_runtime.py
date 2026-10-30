@@ -8,13 +8,16 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from set_common import SAFE_ID, load_contract, load_json, plan_modules, qa_errors, resolve_file, sha256, write_json
+from set_common import SAFE_ID, load_contract, load_json, plan_modules, resolve_file, sha256
 from quality_rules import focused_prompt, required_checks, review_status, validate_quality
 from a_plus_layout import design_handoff, image_membership, layout_summary
 from finalize_a_plus_image import export_errors
-from structure_state import dependency_errors, structure_requirements
+from structure_state import structure_requirements
 from execution_policy import policy_errors
 from gallery_review import opening_review_status, require_opening_approval
+from project_store import transaction, claim_generation, get_claim, recover_generation
+from sync_set_status import synchronize
+from record_candidate import record_candidate
 
 SCRIPTS = Path(__file__).resolve().parent
 SINGLE = SCRIPTS.parents[1] / "product-single-image-generator" / "scripts"
@@ -57,6 +60,10 @@ def progress(root, plan, state, product):
             if output.is_file():
                 row["status"] = "REVIEW_REQUIRED"
         row["required"] = module.get("required", True)
+        if row.get("status") == "CONTRACT_CREATED" and row.get("candidate_id"):
+            claim = get_claim(root, row["candidate_id"])
+            if claim and claim["status"] == "RUNNING":
+                row["status"] = "GENERATING"
         rows.append(row)
     return rows
 
@@ -99,7 +106,7 @@ def summary(plan, state, rows, selected):
         if membership:
             result["current"]["page"] = membership
         status = selected["status"]
-        result["next_action"] = "REVIEW_CURRENT_IMAGE" if status == "REVIEW_REQUIRED" else "RETRY_OR_REPLAN_CURRENT_IMAGE" if status == "REJECTED" else "RESOLVE_BLOCKED_MODULE" if status == "BLOCKED" else "PREPARE_CURRENT_IMAGE"
+        result["next_action"] = "WAIT_OR_RECOVER_GENERATION" if status == "GENERATING" else "REVIEW_CURRENT_IMAGE" if status == "REVIEW_REQUIRED" else "RETRY_OR_REPLAN_CURRENT_IMAGE" if status == "REJECTED" else "RESOLVE_BLOCKED_MODULE" if status == "BLOCKED" else "PREPARE_CURRENT_IMAGE"
     else:
         result["next_action"] = "NONE" if state["status"] == "COMPLETE" else "SYNCHRONIZE_OR_COMPLETE_PLAN"
     if state.get("block_reason") == "SET_SOURCES_CHANGED":
@@ -174,6 +181,8 @@ def packet(root, plan, state, product, row, phase, max_images):
                 result["postprocess"]["instruction"] = "Raw exists; code-export to output_path, no regeneration. Same ratio resizes full frame; otherwise inspect and set --keep-box."
                 if contract["output_requirements"].get("pre_crop_review") == "OBSERVED_LAYOUT_V1":
                     result["postprocess"]["instruction"] = "Raw exists; no regeneration. Inspect source QA, check crop, then guarded export with --package/--contract/--review."
+        if result["phase"] == "generation" and get_claim(root, contract["candidate_id"]):
+            raise ValueError("generation already claimed; wait or recover the current attempt")
     else:
         candidate = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), {"path": contract["output_path"]})
         image = resolve_file(root, candidate["path"])
@@ -207,11 +216,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("package", type=Path)
     parser.add_argument("--set-id", required=True)
-    parser.add_argument("action", choices=("status", "next", "next-generation", "module", "prepare", "packet", "record", "sync", "handoff"))
+    parser.add_argument("action", choices=("status", "next", "next-generation", "module", "prepare", "packet", "record", "sync", "handoff", "claim", "recover"))
     parser.add_argument("--module-id")
     parser.add_argument("--phase", choices=("generation", "review"), default="generation")
     parser.add_argument("--retry", action="store_true")
     parser.add_argument("--correction", default="")
+    parser.add_argument("--claim-token", help="ownership token returned by claim")
+    parser.add_argument("--reason", help="concrete interruption/failure reason for recovery")
     parser.add_argument("--decision", choices=("PENDING_REVIEW", "REJECTED_TOPOLOGY", "REJECTED_VISUAL", "ACCEPTED", "HUMAN_STRUCTURE_REVIEW_PASSED"))
     parser.add_argument("--failure-code", choices=("ANATOMY", "CONTACT", "HARDWARE_STATE", "MECHANISM", "PRODUCT_IDENTITY", "COPY", "LAYOUT"))
     parser.add_argument("--report")
@@ -272,6 +283,8 @@ def main():
                     attempt += 1
                 elif row["status"] in {"REJECTED", "BLOCKED", "ACCEPTED"}:
                     raise ValueError("review/replan this module, or use --retry with a concrete correction after rejection")
+                elif row["status"] == "GENERATING":
+                    raise ValueError("generation is active; wait or recover it before preparing again")
                 if not row.get("contract_path") or args.retry:
                     command(SCRIPTS, "materialize_module_contracts.py", root, "--set-id", args.set_id, "--module-id", row["module_id"], "--attempt", str(attempt), "--correction", args.correction)
                     plan, state, product = records(root, args.set_id)
@@ -282,64 +295,48 @@ def main():
                     command(SINGLE, "validate_run_records.py", root, "--contract", row["contract_path"], "--ready-for-generation")
                 plan, state, product = records(root, args.set_id)
                 result = packet(root, plan, state, product, row, "review" if row["status"] == "REVIEW_REQUIRED" else "generation", args.max_images)
+        elif args.action == "claim":
+            if not args.module_id:
+                raise ValueError("claim requires --module-id from prepare")
+            with transaction(root):
+                plan, state, product = records(root, args.set_id)
+                row = pick(progress(root, plan, state, product), args.module_id)
+                result = packet(root, plan, state, product, row, "generation", args.max_images)
+                if result["phase"] != "generation":
+                    raise ValueError("raw output exists; resume postprocessing instead of claiming generation")
+                result["claim_token"] = claim_generation(root, row["contract_path"], result["candidate_id"])
+                # The claim already pins this hash in SQLite; keep the tool packet small.
+                result.pop("contract_sha256")
+                if len(json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode()) > args.max_bytes:
+                    raise ValueError("claim packet exceeds max-bytes; no task was claimed")
+        elif args.action == "recover":
+            if not args.module_id or not args.reason:
+                raise ValueError("recover requires --module-id and a concrete --reason")
+            with transaction(root):
+                plan, state, product = records(root, args.set_id)
+                row = pick(progress(root, plan, state, product), args.module_id)
+                result = recover_generation(root, row["contract_path"], args.claim_token, args.reason)
+                synchronize(root, args.set_id)
         elif args.action == "packet":
             if row is None:
                 raise ValueError("no selected module")
             result = packet(root, plan, state, product, row, args.phase, args.max_images)
         else:
-            if not args.module_id or not args.decision or row is None:
-                raise ValueError("record requires --module-id and --decision")
-            check_sources(root, plan, state, product)
-            path = resolve_file(root, row["contract_path"])
-            contract = load_contract(root, path)
-            if not args.decision.startswith("REJECTED"):
-                failures = dependency_errors(product, contract.get("required_lock_ids"), contract.get("resolved_identity_locks"))
-                if failures:
-                    raise ValueError("; ".join(failures))
-            image_relative = args.candidate_path or contract["output_path"]
-            image = resolve_file(root, image_relative)
-            if args.decision == "PENDING_REVIEW":
-                failures = export_errors(root, image, contract.get("output_requirements", {}))
-                if failures:
-                    raise ValueError("; ".join(failures))
-            previous = next((x for x in product.get("candidates", []) if x.get("candidate_id") == contract["candidate_id"]), None)
-            if previous and previous.get("sha256") != sha256(image):
-                raise ValueError("candidate ID already belongs to different image bytes")
-            if previous and previous.get("status") == "ACCEPTED" and args.decision != "ACCEPTED":
-                raise ValueError("accepted human decision cannot be silently overwritten")
-            candidate = {**(previous or {}), "candidate_id": contract["candidate_id"], "run_id": contract["run_id"], "source_contract": row["contract_path"], "path": image_relative, "sha256": sha256(image), "status": args.decision}
-            if args.decision.startswith("REJECTED"):
-                if not args.failure_code:
-                    raise ValueError("rejection requires a short --failure-code")
-                candidate["failure_code"] = args.failure_code
-            if args.report:
-                report = load_json(resolve_file(root, args.report))
-                if report.get("candidate_id") != contract["candidate_id"] or report.get("candidate_sha256") != candidate["sha256"] or report.get("contract_sha256") != sha256(path):
-                    raise ValueError("QA report belongs to different candidate/contract bytes")
-                candidate.setdefault("checks", {})["visual"] = {"report_path": args.report}
-            if args.decision in {"ACCEPTED", "HUMAN_STRUCTURE_REVIEW_PASSED"}:
-                if not args.human_reviewer or not args.decision_reference or not args.report:
-                    raise ValueError("human decisions require an actual reviewer, decision reference and QA report")
-                failures = qa_errors(root, contract, path, candidate, report)
-                if failures:
-                    raise ValueError("; ".join(failures))
-                candidate["human_review"] = {"reviewer": args.human_reviewer, "decision_reference": args.decision_reference}
-            product["candidates"] = [x for x in product.get("candidates", []) if x.get("candidate_id") != candidate["candidate_id"]] + [candidate]
-            status = "ACCEPTED" if args.decision == "ACCEPTED" else "REJECTED" if args.decision.startswith("REJECTED") else "HUMAN_REVIEW"
-            follow_up = "NEXT_SET_MODULE" if status == "ACCEPTED" else "REGENERATE_REJECTED_CANDIDATE" if status == "REJECTED" else "COMPLETE_VISUAL_QA_AND_HUMAN_REVIEW"
-            workflow = product.setdefault("workflow", {})
-            if workflow.get("active_candidate_id") != candidate["candidate_id"]:
-                workflow["geometry"] = {"status": "NOT_REQUESTED"}
-            workflow.update({"status": status, "active_run_id": contract["run_id"], "active_view": contract["target_view"], "active_contract": row["contract_path"], "active_candidate_id": candidate["candidate_id"], "next_action": follow_up})
-            for run in product.get("runs", []):
-                if run.get("run_id") == contract["run_id"]:
-                    run["status"] = status
-            # Product decision commits first; set state can always be rebuilt by sync.
-            write_json(root / "PRODUCT_STATE.json", product)
-            command(SCRIPTS, "sync_set_status.py", root, "--set-id", args.set_id)
-            plan, state, product = records(root, args.set_id)
-            rows = progress(root, plan, state, product)
-            result = summary(plan, state, rows, pick(rows))
+            with transaction(root):
+                plan, state, product = records(root, args.set_id)
+                rows = progress(root, plan, state, product)
+                row = pick(rows, args.module_id)
+                if not args.module_id or not args.decision or row is None:
+                    raise ValueError("record requires --module-id and --decision")
+                check_sources(root, plan, state, product)
+                record_candidate(root, row["contract_path"], args.decision, candidate_path=args.candidate_path,
+                                 failure_code=args.failure_code, report_address=args.report,
+                                 human_reviewer=args.human_reviewer, decision_reference=args.decision_reference,
+                                 claim_token=args.claim_token)
+                synchronize(root, args.set_id)
+                plan, state, product = records(root, args.set_id)
+                rows = progress(root, plan, state, product)
+                result = summary(plan, state, rows, pick(rows))
         if args.action in {'status', 'next', 'next-generation', 'sync', 'record'}:
             gate = opening_review_status(root, plan, state, product)
             if gate:

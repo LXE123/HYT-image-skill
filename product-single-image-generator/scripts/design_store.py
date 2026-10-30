@@ -1,6 +1,6 @@
 """Resolve one pinned visual recipe; do not forward a complete design catalog."""
+from project_store import read_json as store_read
 
-import json
 from collections import defaultdict
 
 from quality_rules import digest, file_at
@@ -54,7 +54,7 @@ def catalog_at(root, plan):
     path = file_at(root, ref.get("path"))
     if digest(path) != ref.get("sha256"):
         raise ValueError("pinned design catalog changed")
-    catalog = json.loads(path.read_text(encoding="utf-8"))
+    catalog = store_read(path)
     if not isinstance(catalog, dict) or catalog.get("revision") != 1:
         raise ValueError("unsupported design catalog")
     return catalog

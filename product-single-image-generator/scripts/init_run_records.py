@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Create a non-destructive per-view generation contract and activate its workflow state."""
+from project_store import read_json as store_read, write_json as store_write, exists as store_exists, transaction
 
 import argparse
 import json
@@ -14,16 +15,11 @@ SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 
 def read_json(path: Path) -> dict:
-    with path.open(encoding="utf-8") as stream:
-        value = json.load(stream)
-    if not isinstance(value, dict):
-        raise ValueError(f"{path.name} 必须是 JSON 对象")
-    return value
+    return store_read(path)
 
 
 def write_json(path: Path, value: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return store_write(path, value)
 
 
 def main() -> int:
@@ -36,6 +32,11 @@ def main() -> int:
     parser.add_argument("--background", default="white")
     parser.add_argument("--a-plus", action="store_true", help="A+ final PNG requires code crop to 1464x600")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     if args.a_plus:
         args.format = "PNG"
 
@@ -72,7 +73,7 @@ def main() -> int:
     ):
         (root / relative).mkdir(parents=True, exist_ok=True)
 
-    if contract_path.exists():
+    if store_exists(contract_path):
         try:
             contract = read_json(contract_path)
         except (OSError, json.JSONDecodeError, ValueError) as exc:

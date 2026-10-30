@@ -3,9 +3,8 @@
 Legacy embedded records remain readable. Referenced contracts are envelopes,
 not cached copies of templates, prompts, or previous conversation context.
 """
+from project_store import read_json as store_read
 
-import json
-from pathlib import Path
 
 from quality_rules import compile_prompt, digest, file_at
 from design_store import resolve_design
@@ -15,10 +14,7 @@ MODULE_KEYS = ("module_id", "channel", "sequence", "required", "sales_task", "ta
 
 
 def read_json(path):
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError(f"JSON object required: {path}")
-    return value
+    return store_read(path)
 
 
 def pinned(root, ref):

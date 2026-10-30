@@ -1,5 +1,7 @@
 # State, contract, and review records
 
+Production JSON names in this guide are SQLite record addresses. Use [database runtime](database-runtime.md) to query/fill drafts and record decisions; do not create parallel state files. Schema examples below describe returned objects.
+
 Use paths relative to `<system Desktop>/ProductVisualWorkspace/products/<product_id>/<version>/`. `index.json` owns reference evidence. `PRODUCT_STATE.json` owns workflow state and decisions. Contracts and QA reports are immutable snapshots; the state points to them rather than copying their full contents.
 
 ## `PRODUCT_STATE.json`
@@ -37,7 +39,7 @@ New packages use this core shape. Existing schema-version 1 packages may be resu
 }
 ```
 
-`workflow` contains only the current control pointers. `reference_package.sha256` is the last validated `index.json` snapshot and lets package validation detect source changes. Historical run, candidate, check, and decision records stay in their arrays. Do not duplicate `evidence_mode`, `product_scope`, reference inventories, contract contents, or full geometry measurements in state.
+`workflow` contains only the current control pointers. `reference_package.sha256` is the last validated `index.json` snapshot and lets package validation detect source changes. Historical runs, candidates, checks and decisions are stored as database rows and projected into these arrays when requested. Do not duplicate `evidence_mode`, `product_scope`, reference inventories, contract contents, or full geometry measurements in state.
 
 Use these workflow statuses:
 
@@ -175,10 +177,10 @@ Use actual registered paths and view names. Omit `views` only when the relation 
 Propose a temporary JSON delta with `reason`, optional package-relative `source_report`, and `updates`. Each update contains `lock_id`, `expected_lock_sha256` and a complete `replacement` lock. Compute the prior-lock hash with `structure_state.value_hash` (canonical JSON); use null only for a new lock ID. Preserve existing fields, explicitly replace incorrect values, cite registered original `evidence_paths`, and choose `LOCKED` or `REVIEW_REQUIRED`. Supplied source reports must match registered candidate/contract bytes and contain an observed failure/uncertainty. Do not append old and contradictory facts to the replacement. The delta is command input, not another live state store.
 
 ```text
-python3 scripts/revise_structure_state.py <package> --change <temporary-delta.json> --expected-state-sha <current-PRODUCT_STATE-file-SHA256>
+python3 scripts/revise_structure_state.py <package> --change <temporary-delta.json> --expected-state-sha <current-PRODUCT_STATE-record-SHA256>
 ```
 
-The updater changes only current locks and a compact decision-log entry, increments the lockset version, and atomically replaces the state file after checking its expected hash. It does not rewrite source photos, approved plans, old contracts, candidates, QA reports or human decisions. `READY` at lockset level remains a record-level condition; individual unresolved locks block dependent tasks. Other writers still need ordinary serialized execution; this is not a multi-writer transaction service.
+The updater changes only current locks and a compact decision-log entry, increments the lockset version, and commits them together in a short `BEGIN IMMEDIATE` transaction after checking the expected record hash. It does not rewrite source photos, approved plans, old contracts, candidates, QA reports or human decisions. `READY` at lockset level remains a record-level condition; individual unresolved locks block dependent tasks. All production writers use the same project transaction interface.
 
 Run set synchronization after applying a delta. It derives blocked children from actual required-lock contents/status, not merely the global version. Unchanged lock dependencies may continue under their original pinned contracts and QA; changed or unresolved dependencies require revised tasks. Reference/index changes still use the existing conservative source-change path. Approved affected plans need a new revision and current snapshot; do not patch their immutable files. Standalone drafts without candidates can compile current selected locks; natural-language analysis must also revise any conflicting task copy/layout/intent. Existing candidate contracts remain immutable.
 

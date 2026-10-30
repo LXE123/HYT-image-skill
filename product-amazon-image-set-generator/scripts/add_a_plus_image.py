@@ -6,7 +6,8 @@ from copy import deepcopy
 from pathlib import Path
 
 from a_plus_layout import layout_errors
-from set_common import MAX_CHANNEL_IMAGES, EXPANDED_MIN_IMAGES, SAFE_ID, generation_templates, load_json, module_stub, plan_modules, store_module_spec, update_product_summary, write_json
+from set_common import MAX_CHANNEL_IMAGES, EXPANDED_MIN_IMAGES, SAFE_ID, generation_templates, load_json, module_stub, plan_modules, store_module_spec, write_json
+from project_store import transaction
 
 
 def main():
@@ -25,6 +26,11 @@ def main():
     parser.add_argument("--after-page-id", help="insert a new page after this page; otherwise append")
     parser.add_argument("--activate-expanded", action="store_true", help="explicitly opt this draft into 30-40 image production")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     for value in (args.set_id, args.page_module_id, args.image_id, args.target_view):
         if not SAFE_ID.fullmatch(value):
             parser.error("unsafe set/page/image/view ID")
@@ -35,7 +41,6 @@ def main():
     try:
         plan = load_json(folder / "SET_PLAN.json")
         state = load_json(folder / "SET_STATE.json")
-        product = load_json(root / "PRODUCT_STATE.json")
         if plan.get("status") != "DRAFT" or state.get("plan_sha256") or any(x.get("contract_path") for x in state.get("modules", [])):
             raise ValueError("only an unproduced draft can be extended; create a new revision for an approved set")
         if plan.get("schema_version", 1) < 2 or not plan.get("a_plus_layout"):
@@ -106,8 +111,6 @@ def main():
         state["next_action"] = "COMPLETE_COMMERCIAL_INPUTS_AND_PLAN"
         write_json(folder / "SET_PLAN.json", plan)
         write_json(folder / "SET_STATE.json", state)
-        update_product_summary(product, state)
-        write_json(root / "PRODUCT_STATE.json", product)
         print(f"ADD  image={args.image_id} page={args.page_module_id}; {len(pages)} page modules, {len(ordered_ids)} independent A+ images")
         print("DRAFT  fill this image's product evidence, claims, composition and quality fields before approval")
     except (OSError, ValueError, KeyError, TypeError) as error:

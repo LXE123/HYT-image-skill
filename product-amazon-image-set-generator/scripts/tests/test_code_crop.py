@@ -13,6 +13,9 @@ from finalize_a_plus_image import TARGET, METHOD, METADATA_KEY, CROP_REVIEW, ass
 from quality_rules import review_binding
 
 
+
+from project_store import read_json as store_read, write_json as store_write, read_bytes as store_bytes, exists as store_exists
+
 class CodeCropTest(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory(prefix='code-crop-')
@@ -27,9 +30,9 @@ class CodeCropTest(unittest.TestCase):
         self.requirements = {'postprocess': METHOD, 'width_px': 1464, 'height_px': 600, 'format': 'PNG'}
 
     def test_real_pixels_crop_preserves_required_region_and_original(self):
-        original = self.raw.read_bytes()
+        original = store_bytes(self.raw)
         record = finalize(self.raw, self.out, [.1, .25, .95, .75])
-        self.assertEqual(self.raw.read_bytes(), original)
+        self.assertEqual(store_bytes(self.raw), original)
         with Image.open(self.out) as image:
             self.assertEqual(image.size, TARGET)
             self.assertEqual(image.format, 'PNG')
@@ -74,7 +77,7 @@ class CodeCropTest(unittest.TestCase):
         for box in (None, [0,0,1,1], [0,.3,1,.2], [0,0,float('nan'),1]):
             with self.subTest(box=box), self.assertRaises(ValueError):
                 finalize(self.raw, self.out, box)
-            self.assertFalse(self.out.exists())
+            self.assertFalse(store_exists(self.out))
 
     def test_upscale_requires_explicit_opt_in_and_records_it(self):
         Image.new('RGB', (732,300), 'white').save(self.raw)
@@ -93,15 +96,15 @@ class CodeCropTest(unittest.TestCase):
         self.assertEqual(export_errors(self.root, self.out, self.requirements), [])
 
     def test_no_overwriting_original_or_existing_candidate(self):
-        before = self.raw.read_bytes()
+        before = store_bytes(self.raw)
         with self.assertRaises(ValueError):
             finalize(self.raw, self.raw, [.1,.25,.9,.75])
         finalize(self.raw, self.out, [.1,.25,.9,.75])
-        final_bytes = self.out.read_bytes()
+        final_bytes = store_bytes(self.out)
         with self.assertRaises(ValueError):
             finalize(self.raw, self.out, [.1,.25,.9,.75])
-        self.assertEqual(self.raw.read_bytes(), before)
-        self.assertEqual(self.out.read_bytes(), final_bytes)
+        self.assertEqual(store_bytes(self.raw), before)
+        self.assertEqual(store_bytes(self.out), final_bytes)
 
     def test_review_rejects_wrong_actual_size_or_missing_code_provenance(self):
         self.assertTrue(export_errors(self.root, self.raw, self.requirements))
@@ -144,11 +147,11 @@ class CodeCropTest(unittest.TestCase):
 
     def test_standalone_a_plus_initializer_enables_required_code_export(self):
         for name, data in [('index.json', {'product_id':'p'}), ('PRODUCT_STATE.json', {'product_id':'p','sku':'p'})]:
-            (self.root/name).write_text(json.dumps(data))
+            store_write(self.root/name, data)
         run = subprocess.run([sys.executable, str(SINGLE/'init_run_records.py'), str(self.root),
             '--run-id','standalone','--sku','p','--view','material','--a-plus'], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
-        contract = json.loads((self.root/'runs/standalone/material_generation_contract.json').read_text())
+        contract = store_read(self.root/'runs/standalone/material_generation_contract.json')
         self.assertEqual(contract['output_requirements']['postprocess'], METHOD)
         self.assertEqual([contract['output_requirements'][k] for k in ('width_px','height_px','format')], [1464,600,'PNG'])
         self.assertEqual(contract['output_requirements']['pre_crop_review'], CROP_REVIEW)
@@ -159,9 +162,9 @@ class CodeCropTest(unittest.TestCase):
         contract = {'candidate_id': 'fixture', 'target_view': 'detail', 'output_path': 'final.png', 'references': [], 'copy': {'title': 'FEATURE'},
                     'quality_contract': {'layout': layout or {}},
                     'output_requirements': {**self.requirements, 'pre_crop_review': CROP_REVIEW}}
-        contract_path.write_text(json.dumps(contract))
+        store_write(contract_path, contract)
         import hashlib
-        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        sha = lambda path: hashlib.sha256(store_bytes(path)).hexdigest()
         image_hash = sha(self.raw)
         report = {'schema_version': 2, 'candidate_id': 'fixture', 'phase': 'SOURCE_IMAGE',
                   'candidate_sha256': image_hash, 'contract_sha256': sha(contract_path),
@@ -178,7 +181,7 @@ class CodeCropTest(unittest.TestCase):
         if 'normalized_crop_box' in decision:
             report['reviewed_crop_box'] = decision['normalized_crop_box']
         report_path.parent.mkdir(parents=True)
-        report_path.write_text(json.dumps(report))
+        store_write(report_path, report)
         return contract, report, contract_path, report_path
 
     def test_guarded_export_derives_protected_crop_and_retains_review_provenance(self):
@@ -199,16 +202,16 @@ class CodeCropTest(unittest.TestCase):
             if change == 'uncertain': data['composition']['boundary_certainty'] = 'UNCERTAIN'
             if change == 'wrong-crop': data['reviewed_crop_box'] = [0,0,1,1]
             if change == 'failed-design': data['checks']['design_quality']['status'] = 'FAIL'
-            report_path.write_text(json.dumps(data))
+            store_write(report_path, data)
             with self.subTest(change=change), self.assertRaises(ValueError):
                 finalize(self.raw, self.out, keep, package=self.root, contract_path=path, review_path=report_path)
-            self.assertFalse(self.out.exists())
+            self.assertFalse(store_exists(self.out))
 
     def test_guard_rejects_projected_copy_conflict_even_if_region_fits(self):
         contract, report, path, report_path = self.source_review_fixture({'copy_box': [0,0,.6,1], 'review_constraints': {'product_clear_of_copy': True}})
         with self.assertRaisesRegex(ValueError, 'intrudes'):
             finalize(self.raw, self.out, package=self.root, contract_path=path, review_path=report_path)
-        self.assertFalse(self.out.exists())
+        self.assertFalse(store_exists(self.out))
 
     def test_guard_cannot_be_bypassed_with_legacy_export_and_detects_changed_source_report(self):
         contract, report, path, report_path = self.source_review_fixture()
@@ -217,31 +220,31 @@ class CodeCropTest(unittest.TestCase):
         self.assertTrue(any('missing source' in e for e in export_errors(self.root, legacy, contract['output_requirements'])))
         finalize(self.raw, self.out, package=self.root, contract_path=path, review_path=report_path)
         report['checks']['layout_output']['observation'] = 'changed after export'
-        report_path.write_text(json.dumps(report))
+        store_write(report_path, report)
         self.assertTrue(any('changed' in e for e in export_errors(self.root, self.out, contract['output_requirements'])))
 
     def test_crop_check_only_returns_proposal_without_exporting(self):
         _, report, path, report_path = self.source_review_fixture()
         report.pop('reviewed_crop_box')
-        report_path.write_text(json.dumps(report))
+        store_write(report_path, report)
         run = subprocess.run([sys.executable, str(SINGLE/'finalize_a_plus_image.py'), '--source', str(self.raw), '--output', str(self.out),
                               '--package', str(self.root), '--contract', str(path), '--review', str(report_path), '--check-only'], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(json.loads(run.stdout)['status'], 'REVIEW_REQUIRED')
         self.assertIn('normalized_crop_box', json.loads(run.stdout))
-        self.assertFalse(self.out.exists())
+        self.assertFalse(store_exists(self.out))
 
     def test_source_phase_draft_initializes_before_final_exists(self):
         _, _, path, _ = self.source_review_fixture()
-        (self.root/'PRODUCT_STATE.json').write_text('{"candidates":[]}')
+        store_write(self.root/'PRODUCT_STATE.json', {'candidates': []})
         run = subprocess.run([sys.executable, str(SINGLE/'candidate_qa.py'), str(self.root), '--contract', str(path.name),
                               '--report', 'qa/draft-source.json', '--init', '--source-image', 'raw.png'], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
-        draft = json.loads((self.root/'qa/draft-source.json').read_text())
+        draft = store_read(self.root/'qa/draft-source.json')
         self.assertEqual(draft['phase'], 'SOURCE_IMAGE')
         self.assertEqual(draft['composition']['coordinate_space'], 'SOURCE_IMAGE')
         self.assertIsNone(draft['reviewed_crop_box'])
-        self.assertFalse(self.out.exists())
+        self.assertFalse(store_exists(self.out))
 
 
 if __name__ == '__main__':

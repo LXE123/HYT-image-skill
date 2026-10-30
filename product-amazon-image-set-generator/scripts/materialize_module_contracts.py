@@ -7,7 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
-from set_common import SAFE_ID, compile_prompt, load_json, module_quality_errors, plan_modules, resolve_file, sha256, update_product_summary, write_json
+from set_common import SAFE_ID, compile_prompt, load_json, module_quality_errors, plan_modules, resolve_file, sha256, write_json
+from project_store import exists as store_exists, transaction
 from design_store import resolve_design
 from structure_state import dependency_errors
 from execution_policy import policy_errors
@@ -29,6 +30,11 @@ def main() -> int:
     parser.add_argument("--attempt", type=int, default=1)
     parser.add_argument("--correction", default="", help="one current corrective instruction, at most 300 characters")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     if not SAFE_ID.fullmatch(args.set_id):
         parser.error("set-id must use letters, digits, dots, underscores, or hyphens")
     if args.module_id and not SAFE_ID.fullmatch(args.module_id):
@@ -210,7 +216,7 @@ def main() -> int:
         elif args.attempt > 1:
             contract["attempt"] = args.attempt
             contract["correction"] = args.correction
-        if contract_path.exists():
+        if store_exists(contract_path):
             try:
                 existing = load_json(contract_path)
             except (OSError, ValueError, json.JSONDecodeError) as error:
@@ -265,7 +271,6 @@ def main() -> int:
         set_state["status"] = "PLAN_APPROVED"
     set_state["next_action"] = "ACTIVATE_AND_PREFLIGHT_MODULE_CONTRACT"
     write_json(state_path, set_state)
-    update_product_summary(product_state, set_state)
     write_json(root / "PRODUCT_STATE.json", product_state)
     print(f"UPDATE  set state: {set_state['status']}")
     return 0

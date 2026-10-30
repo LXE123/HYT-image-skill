@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
 """Apply an evidence-grounded semantic delta to current product locks; never edit old contracts."""
+from project_store import read_json as store_read, write_json as store_write, transaction
 import argparse
 from copy import deepcopy
 import json
-import os
 import re
 from pathlib import Path
-import tempfile
 
 from quality_rules import digest, file_at
 from structure_state import value_hash
 
 
 def apply_change(root, change, expected_sha):
+    with transaction(root):
+        return _apply_change(root, change, expected_sha)
+
+
+def _apply_change(root, change, expected_sha):
     root = Path(root).resolve()
     state_path = root / 'PRODUCT_STATE.json'
     if digest(state_path) != expected_sha:
         raise ValueError('product state changed; reread current state before applying the delta')
-    state = json.loads(state_path.read_text())
-    index = json.loads((root / 'index.json').read_text())
+    state = store_read(state_path)
+    index = store_read(root / 'index.json')
     if state.get('reference_package', {}).get('sha256') != digest(root / 'index.json'):
         raise ValueError('reconcile changed reference evidence before revising structure')
     if set(change) - {'reason', 'updates', 'source_report'} or not isinstance(change.get('reason'), str) or not change['reason'].strip():
@@ -29,7 +33,7 @@ def apply_change(root, change, expected_sha):
     if change.get('source_report'):
         report_path = file_at(root, change['source_report'])
         report_path.relative_to(root / 'qa')
-        report = json.loads(report_path.read_text())
+        report = store_read(report_path)
         candidate = next((x for x in state.get('candidates', []) if x.get('candidate_id') == report.get('candidate_id')), None)
         if not candidate or report.get('candidate_sha256') != candidate.get('sha256') or report.get('candidate_sha256') != digest(file_at(root, candidate['path'])) or report.get('contract_sha256') != digest(file_at(root, candidate['source_contract'])):
             raise ValueError('feedback report does not match registered candidate/contract bytes')
@@ -87,16 +91,7 @@ def apply_change(root, change, expected_sha):
     lockset['version'] += 1
     # READY describes the current record; individual unresolved locks block only their dependants.
     updated.setdefault('decision_log', []).append({'action': 'STRUCTURE_STATE_REVISED', 'reason': change['reason'], 'lockset_version': lockset['version'], 'changes': changes, **({'source_report': change['source_report'], 'source_report_sha256': digest(file_at(root, change['source_report']))} if change.get('source_report') else {})})
-    data = json.dumps(updated, ensure_ascii=False, indent=2) + '\n'
-    with tempfile.NamedTemporaryFile(mode='w', dir=root, prefix='.structure-', delete=False) as stream:
-        temp = Path(stream.name)
-        stream.write(data); stream.flush(); os.fsync(stream.fileno())
-    try:
-        if digest(state_path) != expected_sha:
-            raise ValueError('product state changed during revision; delta was not applied')
-        os.replace(temp, state_path)
-    finally:
-        temp.unlink(missing_ok=True)
+    store_write(state_path, updated)
     return {'lockset_version': lockset['version'], 'changed_lock_ids': sorted(seen), 'state_sha256': digest(state_path), 'next_action': 'RESOLVE_CURRENT_TASK_DEPENDENCIES', 'visual_acceptance': False}
 
 
@@ -107,7 +102,7 @@ def main():
     parser.add_argument('--expected-state-sha', required=True)
     args = parser.parse_args()
     try:
-        result = apply_change(args.package, json.loads(args.change.read_text()), args.expected_state_sha)
+        result = apply_change(args.package, store_read(args.change), args.expected_state_sha)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.error(str(error))
     print(json.dumps(result, ensure_ascii=False, indent=2))

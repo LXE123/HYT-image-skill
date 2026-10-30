@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Create or validate a visual-inspection record without accepting a candidate."""
+from project_store import read_json as store_read, write_json as store_write, exists as store_exists, transaction
 
 from structure_state import structure_requirements
 import argparse
@@ -23,6 +24,11 @@ def main():
     parser.add_argument("--comparison-image", action="append", default=[], help="package-relative image inspected for set continuity; repeat at initialization")
     parser.add_argument("--source-image", help="initialize a SOURCE_IMAGE crop review for this package-relative generated original")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     if args.comparison_image and not args.init:
         parser.error("comparison images must be bound when initializing a new report")
     if args.source_image and not args.init:
@@ -31,7 +37,7 @@ def main():
     try:
         contract_path = file_at(root, args.contract)
         contract = load_contract(root, contract_path)
-        state = json.loads((root / "PRODUCT_STATE.json").read_text())
+        state = store_read(root / "PRODUCT_STATE.json")
         candidate = next((x for x in state.get("candidates", []) if x.get("candidate_id") == contract.get("candidate_id")), None)
         candidate = candidate or {"candidate_id": contract["candidate_id"], "path": contract["output_path"]}
         image_path = file_at(root, args.source_image or candidate["path"])
@@ -43,7 +49,7 @@ def main():
         report_path = (root / rel).resolve()
         report_path.relative_to((root / "qa").resolve())
         if args.init:
-            if report_path.exists():
+            if store_exists(report_path):
                 raise ValueError("report exists; it was not overwritten")
             export_failures = [] if args.source_image else export_errors(root, image_path, contract.get("output_requirements", {}))
             if export_failures:
@@ -68,10 +74,10 @@ def main():
             if args.source_image:
                 report["reviewed_crop_box"] = None
             report_path.parent.mkdir(parents=True, exist_ok=True)
-            report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+            store_write(report_path, report)
             print(f"CREATE  QA draft: {args.report}; inspect pixels before filling observations")
             return 0
-        report = json.loads(file_at(root, args.report).read_text())
+        report = store_read(file_at(root, args.report))
         result = review_status(root, contract, contract_path, candidate, report)
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
         parser.error(str(exc))

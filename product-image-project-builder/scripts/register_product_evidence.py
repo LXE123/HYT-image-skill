@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Register one independent product-evidence image without copying it."""
+import sys
+from pathlib import Path
 
 import argparse
-import hashlib
 import json
 import re
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
+from project_store import read_json as store_read, write_json as store_write, digest as store_digest, transaction
 
 
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
@@ -24,11 +28,7 @@ def resolve(root, value):
 
 
 def sha256(path):
-    hasher = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            hasher.update(block)
-    return hasher.hexdigest()
+    return store_digest(path)
 
 
 def main():
@@ -42,6 +42,11 @@ def main():
     parser.add_argument("--hard-constraint", action="store_true")
     parser.add_argument("--observed-states", default="", help="comma-separated visibly proven state IDs, e.g. clasp_closed,clasp_open; never infer operation")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     if not SAFE_ID.fullmatch(args.evidence_id) or not SAFE_ID.fullmatch(args.view):
         parser.error("evidence-id 和 view 只能使用字母、数字、点、下划线和连字符")
     structures = [value.strip() for value in args.structures.split(",") if value.strip()]
@@ -50,7 +55,7 @@ def main():
     root = args.package.resolve()
     index_path = root / "index.json"
     try:
-        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index = store_read(index_path)
         source = resolve(root, args.source)
     except (OSError, json.JSONDecodeError, ValueError) as error:
         parser.error(str(error))
@@ -69,7 +74,7 @@ def main():
         "hard_constraint": args.hard_constraint,
         "observed_states": [x.strip() for x in args.observed_states.split(",") if x.strip()],
     })
-    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store_write(index_path, index)
     print(f"REGISTER  {args.evidence_id}")
     return 0
 

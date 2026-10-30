@@ -5,7 +5,7 @@ description: Build and maintain reusable product-image evidence packages from re
 
 # Product evidence packages
 
-Own product evidence, provenance, sellable scope and gaps. The single-image skill owns image candidates/QA; the Amazon skill owns set planning and its queue. Reuse known product identity and the existing package.
+Own product evidence, provenance, sellable scope and gaps. The single-image skill owns image candidates/QA; the Amazon skill owns set planning and its queue. Reuse known product identity and the existing package. Local production records use one project SQLite database; read [database runtime](../product-single-image-generator/references/database-runtime.md) before editing state or migrating an old package. Images and original evidence remain files.
 
 ## Intake before production
 
@@ -19,7 +19,8 @@ Choose evidence mode from the actual inputs:
 
 - `MODEL_ASSISTED`: useful aligned same-view render/mask pairs plus real photos.
 - `PHOTO_EVIDENCE`: sufficient multi-view real photos, without requiring render masks.
-- `INCOMPLETE`: evidence cannot establish the sold object or required structures; record affected tasks and gaps before production.
+
+`INCOMPLETE` is readiness, not an evidence-mode argument: record affected tasks/gaps when evidence cannot establish the sold object or required structures.
 
 Resolve reversible choices internally. Ask only for necessary unresolved facts/scope, consolidate questions and continue independent authorized tasks. Reuse a supplied ID/SKU; if none is reliable, use temporary task storage until permanent registration is needed.
 
@@ -29,10 +30,11 @@ Local package root is `<system Desktop>/ProductVisualWorkspace/products/<product
 
 ```text
 python3 scripts/initialize_package.py --product-id <id> --version <version> --evidence-mode <mode> --product-scope <scope>
-python3 scripts/resolve_package_path.py --product-id <id> --version <version> --require-existing
 ```
 
-Initialization creates directories and empty control records; AI still needs to analyze/register evidence and fill identity facts. Resume only a complete matching package. A partial/conflicting package needs recovery or a new version; do not overwrite it.
+For an existing package whose path is unknown, use `resolve_package_path.py --product-id <id> --version <version> --require-existing`; this is a resume branch, not a second initialization step.
+
+Initialization creates directories, `index.json` and empty records in `PROJECT.sqlite3`; AI still needs to analyze/register evidence and fill identity facts through the database draft interface. Resume only a complete matching package. A partial/conflicting package needs recovery or a new version; do not overwrite it.
 
 During this initial intake, split supplied product features and selling points into atomic `product.facts`, retaining their sources and support status in the intake archive. A supplied marketing sentence is not automatically a verified fact. Reuse this analysis for later images; decide visual versus copy-only treatment when planning the actual image, not while creating empty directories. Follow the dependency/copy boundary in [automatic intake](references/automatic-intake.md).
 

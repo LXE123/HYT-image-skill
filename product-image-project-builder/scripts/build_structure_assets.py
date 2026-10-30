@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """Create versioned grayscale and contour evidence assets from supplied references."""
+import sys
+from pathlib import Path
 
 import argparse
-import hashlib
-import json
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 
-import numpy as np
 from PIL import Image, ImageFilter
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
+from project_store import read_json as store_read, write_json as store_write, digest as store_digest, exists as store_exists
 
 
 def digest(path):
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for block in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(block)
-    return h.hexdigest()
+    return store_digest(path)
 
 
 def safe_path(root, value):
@@ -54,7 +52,7 @@ def main():
     root = args.package.resolve()
     anchors_dir = root / "qa/identity_anchors"
     manifest_path = anchors_dir / "index.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {"schema_version": 1, "anchors": []}
+    manifest = store_read(manifest_path) if store_exists(manifest_path) else {"schema_version": 1, "anchors": []}
     if not args.anchor_id or not args.source:
         parser.error("创建结构锚点必须同时提供 --anchor-id 和 --source")
     plans = [(args.anchor_id, args.source, args.crop, [v for v in args.structures.split(",") if v])]
@@ -72,12 +70,12 @@ def main():
             parser.error(f"锚点 {anchor_id} 已存在且证据已变化；请使用新的 anchor-id 保留版本历史")
         entry = save_assets(source, anchors_dir / anchor_id, crop, anchor_id, structures)
         entry["source_path"] = source_rel
-        (anchors_dir / anchor_id / "anchor.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        store_write(anchors_dir / anchor_id / "anchor.json", entry)
         known[anchor_id] = entry
         print(f"CREATE  {anchor_id}")
     manifest["anchors"] = [known[key] for key in sorted(known)]
     anchors_dir.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    store_write(manifest_path, manifest)
     return 0
 
 

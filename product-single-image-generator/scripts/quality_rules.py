@@ -1,4 +1,5 @@
 """Shared preflight and recorded visual-QA rules; these do not inspect pixels."""
+from project_store import digest as store_digest, is_file as store_file
 
 from structure_state import contract_state_errors, structure_requirements, observation_errors
 import hashlib
@@ -51,7 +52,7 @@ def design_execution(contract):
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return store_digest(path)
 
 
 def review_binding(root, contract, image_hash, comparison_images=()):
@@ -149,7 +150,7 @@ def file_at(root, value):
         raise ValueError(f"unsafe package path: {value!r}")
     path = (root / value).resolve()
     path.relative_to(root.resolve())
-    if not path.is_file():
+    if not store_file(path):
         raise ValueError(f"missing file: {value}")
     return path
 

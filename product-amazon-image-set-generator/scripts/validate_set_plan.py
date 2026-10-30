@@ -8,7 +8,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from set_common import SAFE_ID, generation_mode_errors, load_json, module_quality_errors, plan_modules, resolve_file, sha256, update_product_summary, write_json
+from set_common import SAFE_ID, generation_mode_errors, load_json, module_quality_errors, plan_modules, resolve_file, sha256, write_json
+from project_store import transaction
 from gallery_review import review_policy_errors
 from a_plus_layout import layout_errors
 from quality_rules import creative_brief_errors
@@ -46,6 +47,11 @@ def main() -> int:
     parser.add_argument("--set-id", required=True)
     parser.add_argument("--approve", action="store_true")
     args = parser.parse_args()
+    with transaction(args.package):
+        return execute(args, parser)
+
+
+def execute(args, parser):
     if not SAFE_ID.fullmatch(args.set_id):
         parser.error("set-id must use letters, digits, dots, underscores, or hyphens")
 
@@ -338,8 +344,6 @@ def main() -> int:
             "next_action": "MATERIALIZE_MODULE_CONTRACTS",
         })
         write_json(state_path, set_state)
-        update_product_summary(product_state, set_state)
-        write_json(root / "PRODUCT_STATE.json", product_state)
         print(f"APPROVE  set plan {args.set_id}: sha256={plan_hash}")
     else:
         print(f"PASS  set plan {args.set_id} is valid")

@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import re
 import sys
 from pathlib import Path, PurePosixPath
 
 # Candidate QA belongs to the sibling production skill. Keep one rule implementation.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "product-single-image-generator" / "scripts"))
-from quality_rules import compile_prompt, file_at, qa_errors, validate_quality
-from context_store import MODULE_KEYS, load_contract, plan_modules
+from quality_rules import compile_prompt as compile_prompt, file_at as file_at, qa_errors as qa_errors, validate_quality
+from context_store import MODULE_KEYS, load_contract as load_contract, plan_modules as plan_modules
 from execution_policy import draft_policy
+from project_store import read_json as store_read, write_json as store_write, digest as store_digest, exists as store_exists, is_file as store_file
 
 
 def generation_templates() -> dict:
@@ -30,7 +29,7 @@ def module_quality_errors(root: Path, module: dict, index: dict, locks: dict) ->
 def store_module_spec(root: Path, set_root: Path, module: dict) -> dict:
     """Split a draft once; subsequent planning edits just this image's spec."""
     path = set_root / "modules" / f"{module['module_id']}.json"
-    if path.exists():
+    if store_exists(path):
         raise ValueError(f"module spec exists; edit its draft explicitly: {path}")
     template = module["generation_template"]
     spec = {k: v for k, v in module.items() if k not in {*MODULE_KEYS[1:], "generation_template"}}
@@ -94,25 +93,15 @@ def generation_mode_errors(plan: dict) -> list[str]:
 
 
 def load_json(path: Path) -> dict:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError(f"{path} must contain a JSON object")
-    return value
+    return store_read(path)
 
 
 def write_json(path: Path, value: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    return store_write(path, value)
 
 
 def sha256(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+    return store_digest(path)
 
 
 def safe_relative(value: object) -> bool:
@@ -124,30 +113,9 @@ def resolve_file(root: Path, value: object) -> Path:
         raise ValueError(f"unsafe root-relative path: {value!r}")
     result = (root / str(value)).resolve()
     result.relative_to(root)
-    if not result.is_file():
+    if not store_file(result):
         raise ValueError(f"file does not exist: {value}")
     return result
-
-
-def update_product_summary(product_state: dict, set_state: dict) -> None:
-    summaries = product_state.setdefault("visual_sets", [])
-    if not isinstance(summaries, list):
-        raise ValueError("PRODUCT_STATE.json visual_sets must be an array")
-    summary = {
-        "set_id": set_state["set_id"],
-        "marketplace": set_state["marketplace"],
-        "status": set_state["status"],
-        "plan_revision": set_state["plan_revision"],
-        "plan_path": set_state["plan_path"],
-        "state_path": f"visual_sets/{set_state['set_id']}/SET_STATE.json",
-        "next_action": set_state["next_action"],
-    }
-    current = next((item for item in summaries if isinstance(item, dict) and item.get("set_id") == set_state["set_id"]), None)
-    if current is None:
-        summaries.append(summary)
-    else:
-        current.clear()
-        current.update(summary)
 
 
 def default_modules(gallery_count: int, a_plus_count: int) -> list[dict]:

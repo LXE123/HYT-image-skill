@@ -1,5 +1,7 @@
 # Set-plan schema
 
+Plans/specs/catalogs and contracts below live in the project database; JSON names are logical addresses. Query or fill a draft through the [database interface](../../product-single-image-generator/references/database-runtime.md#fill-a-draft-then-execute). Schema examples retain their JSON representation.
+
 Read for initial planning or revisions. Runtime work uses [state-handoff.md](state-handoff.md) and one-image packets.
 
 ## Schema 2: one shared plan, separate image specs

@@ -7,6 +7,8 @@ description: Generate, inspect and correct one reference-grounded product image 
 
 Generate one independent image per call. A single image may contain related detail regions, approved copy/graphics, comparison or verified steps. A full A+ example supplies context; follow the current task rather than reproducing a long page or expanding one image into a set. Multi-image A+ assembly belongs to the design team.
 
+Local state, plans, contracts and visual-QA records live in `PROJECT.sqlite3`. Read [database runtime](references/database-runtime.md) when querying/editing records, claiming generation or recovering a project. JSON names in commands are database addresses; actual reference and output images remain files.
+
 ## Select the current image
 
 For set-linked work, use the Amazon skill's `set_runtime.py` packet. Read only the selected child's task, evidence, creative brief and review requirements. Content groups may contain several children: one completed child does not complete its parent. A batch uses `next-generation` to find unproduced work; `next` may instead request review of an existing output.
@@ -15,13 +17,18 @@ For a new standalone creative task, resolve the builder's existing product packa
 
 ```text
 python3 scripts/init_run_records.py <package> --run-id <id> --sku <sku> --view <view>
-python3 scripts/compile_generation_prompt.py <package> --contract <relative-contract>
-python3 scripts/validate_run_records.py <package> --contract <relative-contract> --ready-for-generation
 ```
 
 Choose the current task's [input-driven execution strategy](../product-image-project-builder/references/automatic-intake.md#automatic-execution-strategy) before compilation. Fill its `execution_policy` from actual inputs: ADVANCED for clear requirements with sufficient evidence, AI_ASSISTED for proactive completion of unspecified creative choices. New drafts start UNRESOLVED. Mode changes never waive structure evidence, supplied copy, retry limits or visual checks. Reuse an unchanged pinned decision; reassess affected tasks when inputs change.
 
-Complete `image_intent`, shared `visual_system`, this image's `creative_brief` and relevant [quality fields](references/visual-quality.md). A blank scaffold or camera/product/text boxes are not a design. For raw mixed requirements, use the builder's [intake](../product-image-project-builder/references/automatic-intake.md).
+Complete `image_intent`, shared `visual_system`, this image's `creative_brief` and relevant [quality fields](references/visual-quality.md). Fill the initialized draft using `project_records.py get/put`, then compile and claim it:
+
+```text
+python3 scripts/compile_generation_prompt.py <package> --contract <relative-contract>
+python3 scripts/validate_run_records.py <package> --contract <relative-contract> --ready-for-generation --claim
+```
+
+Keep the returned claim token until the saved image is registered with `record_candidate.py`. A blank scaffold or camera/product/text boxes are not a design. For raw mixed requirements, use the builder's [intake](../product-image-project-builder/references/automatic-intake.md).
 
 ## Gallery: execute the resolved state
 
@@ -36,6 +43,8 @@ Establish the sales task, buyer question, role and necessary proof first. Materi
 For Gallery or A+ multi-variant product displays, read [variant design](../product-amazon-image-set-generator/references/visual-direction.md#multi-variant-product-design). Set the `variants` role, depict each required choice as an actual product, and use swatch cards only for supported colour/pattern/name correspondence. Realize the current child's concrete visual idea within the shared background/light/type rules; do not copy the card layout or switch a white set to black for drama. Explicit swatch-only tasks retain their assigned scope.
 
 For fit/compatibility tasks, make the supported option/size → fit range → compatible-model relationships readable with their exact assigned numbers and units. This is a selection explanation, not only a product render or a compatible headline. Use the `fit` role and check every assigned mapping against current evidence/copy; a neighbouring variant or lifestyle image does not fulfil it. Product-character tasks use `product_character` to express positioning without taking over size/variant responsibilities. The set planner owns complete coverage and the resolved count; execute this child without silently dropping its information to fit a seed count.
+
+For set work, call the Amazon runtime `claim --module-id <id>` after `prepare` and before each new image-tool invocation; use the claimed packet and retain its token for `record`. An existing claim requires waiting/recovery, never another generation call.
 
 Real product evidence controls identity and geometry. Style/pose references have only their declared roles. Use the packet's selected references, and attach actual image data/files to the generator; paths in a prompt are not attachments. Send the current prompt only, without the whole plan, intake archive, history or unrelated QA. A file packet cannot erase earlier chat context. In web testing use the Amazon skill's [browser workflow](../product-amazon-image-set-generator/references/browser-testing.md) rather than requiring local scripts.
 
@@ -61,7 +70,7 @@ Read [visual quality](references/visual-quality.md) when establishing inspection
 python3 scripts/candidate_qa.py <package> --contract <relative-contract> --report qa/visual/<candidate>.json --init
 ```
 
-New QA drafts bind review inputs and record observed final-image regions separately from target layout; annotate the assigned complete product, wearing area or detail, exact lettering, and uncertainty. Follow [actual composition and reuse](references/visual-quality.md#actual-composition-and-review-reuse). Scripts check bindings and explicit geometry on these annotations; they do not detect objects or establish aesthetics. Uncertain boundaries require review, never a default pass.
+Fill QA drafts through `project_records.py get/put` after inspecting pixels. New QA drafts bind review inputs and record observed final-image regions separately from target layout; annotate the assigned complete product, wearing area or detail, exact lettering, and uncertainty. Follow [actual composition and reuse](references/visual-quality.md#actual-composition-and-review-reuse). Scripts check bindings and explicit geometry on these annotations; they do not detect objects or establish aesthetics. Uncertain boundaries require review, never a default pass.
 
 Before repeating visual inspection, query the saved report with the same command plus `--status`. Reuse valid observations for unchanged images/evidence/rules; an unchanged failure needs correction/replanning, not another identical inspection. After any image edit or crop, check the new final image. Link QA through the runtime for set work. Keep candidates pending human review and continue other authorized tasks only after any mandatory Gallery opening-pair approval. Only real user/designated-reviewer feedback can record acceptance.
 
